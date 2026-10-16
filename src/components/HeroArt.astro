@@ -1,87 +1,88 @@
 ---
-// Sonoran horizon: Santa Catalina ridgeline, saguaros, a masjid silhouette.
-// Sunset by day, crescent and stars by night (follows the colour scheme).
-const stars = Array.from({ length: 70 }, (_, i) => {
+// Sonoran horizon in two layers so nothing gets cropped at any width:
+// a full-height sky (gradient, stars, moon) and a landscape strip that keeps its proportions.
+const stars = Array.from({ length: 90 }, (_, i) => {
   const r = (n: number) => { const x = Math.sin(i * 999 + n * 77) * 10000; return x - Math.floor(x); };
-  return { x: r(1) * 1440, y: r(2) * 330, s: 0.5 + r(3) * 1.3, d: (r(4) * 4).toFixed(2) };
+  return { x: r(1) * 1600, y: r(2) * 760, s: 0.5 + r(3) * 1.3, d: (r(4) * 4).toFixed(2) };
 });
 const saguaros = [
-  { x: 120, y: 520, s: 1.05 }, { x: 300, y: 505, s: 0.6 }, { x: 470, y: 528, s: 1.35 },
-  { x: 760, y: 512, s: 0.5 }, { x: 1250, y: 522, s: 1.2 }, { x: 1380, y: 505, s: 0.7 }, { x: 640, y: 500, s: 0.38 },
+  { x: 120, y: 340, s: 1.05 }, { x: 300, y: 325, s: 0.6 }, { x: 470, y: 348, s: 1.35 },
+  { x: 760, y: 332, s: 0.5 }, { x: 1250, y: 342, s: 1.2 }, { x: 1380, y: 325, s: 0.7 }, { x: 640, y: 320, s: 0.38 },
 ];
 ---
-<svg class="hero-art" viewBox="0 0 1440 560" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-  <defs>
-    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="var(--bg)" />
-      <stop offset="0.42" stop-color="var(--bg)" />
-      <stop offset="0.66" stop-color="var(--sky-1)" />
-      <stop offset="0.82" stop-color="var(--sky-2)" />
-      <stop offset="1" stop-color="var(--sky-3)" />
-    </linearGradient>
-    <radialGradient id="sunglow" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#ffe7bf" stop-opacity="0.95" />
-      <stop offset="0.35" stop-color="#ffd09a" stop-opacity="0.55" />
-      <stop offset="1" stop-color="#ffb07a" stop-opacity="0" />
-    </radialGradient>
-    <radialGradient id="moonglow" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#bfe8e2" stop-opacity="0.35" />
-      <stop offset="1" stop-color="#bfe8e2" stop-opacity="0" />
-    </radialGradient>
-    <symbol id="saguaro" viewBox="-40 -170 80 172" overflow="visible">
-      <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M0 0V-150" stroke-width="17" />
-        <path d="M0-52H-22V-102" stroke-width="12" />
-        <path d="M0-78H20V-124" stroke-width="12" />
-      </g>
-    </symbol>
-  </defs>
+<div class="hero-art" aria-hidden="true">
+  <div class="sky"></div>
 
-  <rect width="1440" height="560" fill="url(#sky)" />
-
-  <!-- night -->
-  <g class="night" style="opacity: var(--moon-o)">
+  <svg class="stars" viewBox="0 0 1600 760" preserveAspectRatio="xMidYMid slice">
     {stars.map((s) => <circle cx={s.x} cy={s.y} r={s.s} fill="#fff" class="twinkle" style={`animation-delay:${s.d}s`} />)}
-    <circle cx="1120" cy="150" r="120" fill="url(#moonglow)" />
-    <path d="M1132 108a44 44 0 1 0 22 80 36 36 0 1 1-22-80Z" fill="#f4ecd8" />
-  </g>
+  </svg>
 
-  <!-- sun -->
-  <g class="day" style="opacity: var(--sun-o)">
-    <circle cx="980" cy="430" r="230" fill="url(#sunglow)" />
-    <circle cx="980" cy="430" r="62" fill="#fff0d6" />
-  </g>
+  <svg class="moon" viewBox="0 0 240 240">
+    <defs>
+      <radialGradient id="moonglow" cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0" stop-color="#bfe8e2" stop-opacity="0.35" />
+        <stop offset="1" stop-color="#bfe8e2" stop-opacity="0" />
+      </radialGradient>
+    </defs>
+    <circle cx="120" cy="120" r="120" fill="url(#moonglow)" />
+    <path d="M132 78a44 44 0 1 0 22 80 36 36 0 1 1-22-80Z" fill="#f4ecd8" />
+  </svg>
 
-  <!-- Santa Catalina ridgeline (far) -->
-  <path transform="translate(0 56) scale(1 0.9)" d="M0 410 70 392 140 400 210 360 265 372 330 330 380 344 440 300 500 322 560 286 610 300 660 270 720 296 780 280 840 312 900 300 960 332 1030 318 1090 346 1150 330 1220 360 1290 348 1360 372 1440 360V560H0Z" fill="var(--mtn-far)" opacity="0.75" />
-  <!-- foothills (near) -->
-  <path d="M0 460 90 440 170 452 260 424 340 446 430 430 520 452 600 438 700 458 800 440 900 462 1000 446 1100 464 1200 448 1300 466 1440 450V560H0Z" fill="var(--mtn-near)" />
+  <!-- Landscape: only the horizon band (original y 180 to 560). -->
+  <svg class="land" viewBox="0 0 1440 380" preserveAspectRatio="xMidYMax slice">
+    <defs>
+      <radialGradient id="sunglow" cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0" stop-color="#ffe7bf" stop-opacity="0.95" />
+        <stop offset="0.35" stop-color="#ffd09a" stop-opacity="0.55" />
+        <stop offset="1" stop-color="#ffb07a" stop-opacity="0" />
+      </radialGradient>
+      <symbol id="saguaro" viewBox="-40 -170 80 172" overflow="visible">
+        <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M0 0V-150" stroke-width="17" />
+          <path d="M0-52H-22V-102" stroke-width="12" />
+          <path d="M0-78H20V-124" stroke-width="12" />
+        </g>
+      </symbol>
+    </defs>
 
-  <!-- masjid silhouette -->
-  <g fill="var(--ground)">
-    <rect x="1000" y="470" width="190" height="60" />
-    <path d="M1035 472a60 60 0 0 1 120 0Z" />
-    <rect x="1093" y="400" width="4" height="16" />
-    <path d="M1095 392a5 5 0 1 0 .1 0Z" />
-    <path d="M1013 476a16 16 0 0 1 32 0Z M1145 476a16 16 0 0 1 32 0Z" />
-    <rect x="1210" y="388" width="18" height="142" />
-    <path d="M1206 400h26l-4-8h-18Z" />
-    <path d="M1207 388 1219 352 1231 388Z" />
-    <rect x="1203" y="440" width="32" height="5" />
-  </g>
+    <g class="day">
+      <circle cx="980" cy="250" r="230" fill="url(#sunglow)" />
+      <circle cx="980" cy="250" r="62" fill="#fff0d6" />
+    </g>
 
-  <!-- desert floor -->
-  <path d="M0 500C240 486 420 512 720 500S1200 486 1440 500V560H0Z" fill="var(--ground)" />
+    <g transform="translate(0 -180)">
+      <path transform="translate(0 56) scale(1 0.9)" d="M0 410 70 392 140 400 210 360 265 372 330 330 380 344 440 300 500 322 560 286 610 300 660 270 720 296 780 280 840 312 900 300 960 332 1030 318 1090 346 1150 330 1220 360 1290 348 1360 372 1440 360V560H0Z" fill="var(--mtn-far)" opacity="0.75" />
+      <path d="M0 460 90 440 170 452 260 424 340 446 430 430 520 452 600 438 700 458 800 440 900 462 1000 446 1100 464 1200 448 1300 466 1440 450V600H0Z" fill="var(--mtn-near)" />
+      <g fill="var(--ground)">
+        <rect x="1000" y="470" width="190" height="60" />
+        <path d="M1035 472a60 60 0 0 1 120 0Z" />
+        <rect x="1093" y="400" width="4" height="16" />
+        <path d="M1095 392a5 5 0 1 0 .1 0Z" />
+        <path d="M1013 476a16 16 0 0 1 32 0Z M1145 476a16 16 0 0 1 32 0Z" />
+        <rect x="1210" y="388" width="18" height="142" />
+        <path d="M1206 400h26l-4-8h-18Z" />
+        <path d="M1207 388 1219 352 1231 388Z" />
+        <rect x="1203" y="440" width="32" height="5" />
+      </g>
+      <path d="M0 500C240 486 420 512 720 500S1200 486 1440 500V600H0Z" fill="var(--ground)" />
+    </g>
 
-  <g style="color: var(--ground)">
-    {saguaros.map((c) => <use href="#saguaro" x={c.x - 40 * c.s} y={c.y - 170 * c.s} width={80 * c.s} height={172 * c.s} />)}
-  </g>
-</svg>
+    <g style="color: var(--ground)">
+      {saguaros.map((c) => <use href="#saguaro" x={c.x - 40 * c.s} y={c.y - 170 * c.s} width={80 * c.s} height={172 * c.s} />)}
+    </g>
+  </svg>
+</div>
 
 <style>
-  .hero-art { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: min(100%, 440px); z-index: -1; }
-  @media (max-width: 700px) { .hero-art { height: 430px; } }
+  .hero-art { --land-h: min(max(26.39vw, 290px), 480px); position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+  .sky { position: absolute; inset: 0; background: linear-gradient(to bottom, var(--bg) 0%, var(--bg) 40%, var(--sky-1) 72%, var(--sky-2) 88%, var(--sky-3) 100%); }
+  .stars { position: absolute; inset: 0; width: 100%; height: 100%; opacity: var(--moon-o); }
+  .moon { position: absolute; right: max(4vw, calc((100vw - var(--maxw)) / 2)); top: 18%; width: clamp(120px, 13vw, 210px); height: auto; opacity: var(--moon-o); }
+  .day { opacity: var(--sun-o); }
+  /* Natural 1440:380 shape up to 480px tall; on smaller screens it stays 1100px wide and shows the right side (the masjid). */
+  .land { position: absolute; right: 0; bottom: 0; width: max(100%, 1100px); max-width: none; height: var(--land-h); }
   .twinkle { animation: twinkle 4s ease-in-out infinite; }
   @keyframes twinkle { 50% { opacity: 0.25; } }
-  .night, .day { transition: opacity 0.6s var(--ease); }
+  .stars, .moon, .day { transition: opacity 0.6s var(--ease); }
+  @media (max-width: 700px) { .moon { top: 10%; width: 90px; right: 16px; opacity: calc(var(--moon-o) * 0.8); } }
 </style>
