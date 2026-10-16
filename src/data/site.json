@@ -1,0 +1,24 @@
+{
+  "name": "Imam's Corner",
+  "center": "Islamic Center of Tucson",
+  "centerShort": "ICT",
+  "tagline": "Guidance, learning and care for the Muslim community of Tucson.",
+  "email": "bhamdan@ictucson.org",
+  "centerWebsite": "https://www.ictucson.org",
+  "address": "901 E 1st St, Tucson, AZ 85719",
+  "mapsUrl": "https://maps.google.com/?q=Islamic+Center+of+Tucson",
+  "bookingUrl": "https://calendar.app.google/AC24bkwbQxRycGSeA",
+  "location": { "lat": 32.2296, "lng": -110.9592, "timezone": "America/Phoenix", "utcOffset": -7 },
+  "prayer": {
+    "method": "ISNA",
+    "fajrAngle": 15,
+    "ishaAngle": 15,
+    "asrFactor": 1,
+    "note": "Calculated adhan times for Tucson (ISNA method). Please confirm iqama times at the masjid."
+  },
+  "jummah": {
+    "khutbahTime": "12:25",
+    "endTime": "12:50",
+    "label": "Khutbah begins 12:25 PM · Salah ends around 12:50 PM"
+  }
+}

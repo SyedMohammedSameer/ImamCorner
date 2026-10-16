@@ -1,0 +1,129 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { getCollection } from 'astro:content';
+import classes from '../data/classes.json';
+import site from '../data/site.json';
+
+const imams = await getCollection('imams');
+const name = (id: string) => imams.find((i) => i.id === id)?.data.shortName ?? id;
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const FULL: Record<string, string> = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday' };
+const KIND: Record<string, { label: string; chip: string; icon: string }> = {
+  reminder: { label: 'Daily reminder', chip: 'chip-teal', icon: 'lightbulb' },
+  class: { label: 'Class', chip: 'chip-clay', icon: 'graduation' },
+  youth: { label: 'Youth', chip: 'chip-gold', icon: 'sparkles' },
+  quran: { label: 'Qur’an circle', chip: 'chip-green', icon: 'book' },
+};
+const order = (t: string) => (/^\d/.test(t) ? parseInt(t) + (t.includes('PM') ? 12 : 0) : t.startsWith('Asr') ? 15.5 : t.startsWith('Maghrib') ? 18 : 20);
+const byDay = Object.fromEntries(DAYS.map((d) => [d, classes.programs.filter((p) => p.days.includes(d)).sort((a, b) => order(a.time) - order(b.time))]));
+---
+<Base title="Classes & reminders" description="Weekly classes, daily reminders, youth programs and Qur'an memorization circles at the Islamic Center of Tucson.">
+  <section class="wrap page-hero">
+    <p class="eyebrow">Learn with us</p>
+    <h1>Classes &amp; <span class="serif">daily reminders.</span></h1>
+    <p class="lead">Free and open to everyone.</p>
+    <div class="legend">{Object.values(KIND).map((k) => <span class={`chip ${k.chip}`}><Icon name={k.icon} size={14} />{k.label}</span>)}</div>
+  </section>
+
+  <section class="wrap">
+    <div class="day-tabs" role="tablist" aria-label="Choose a day">
+      {DAYS.map((d) => (
+        <button role="tab" type="button" data-day={d} aria-selected="false" aria-controls={`day-${d}`}>
+          <span class="d-short">{d}</span><span class="d-count">{byDay[d].length + (d === 'Fri' ? 1 : 0)}</span>
+        </button>
+      ))}
+      <button role="tab" type="button" data-day="all" aria-selected="false" class="week-tab"><Icon name="grid" size={16} /><span class="d-short">Week</span></button>
+    </div>
+
+    <div class="days">
+      {DAYS.map((d) => (
+        <div class="day" id={`day-${d}`} data-panel={d} role="tabpanel">
+          <h2 class="day-h">{FULL[d]}<span class="today-badge">Today</span></h2>
+          <div class="day-list">
+            {d === 'Fri' && (
+              <a href="/jummah" class="card prog jumuah">
+                <div class="prog-time"><strong>12:25 PM</strong></div>
+                <div class="prog-body"><span class="chip chip-clay"><Icon name="mic" size={14} />Jumu'ah</span><h3>Friday khutbah &amp; prayer</h3><p class="small muted">See who is giving the khutbah →</p></div>
+              </a>
+            )}
+            {byDay[d].map((p) => (
+              <article class="card prog">
+                <div class="prog-time"><strong>{p.time}</strong></div>
+                <div class="prog-body">
+                  <span class={`chip ${KIND[p.kind].chip}`}><Icon name={KIND[p.kind].icon} size={14} />{KIND[p.kind].label}</span>
+                  <h3>{p.title}</h3>
+                  {p.arabic && <p class="arabic prog-ar" lang="ar">{p.arabic}</p>}
+                  {p.subtitle && <p class="small">{p.subtitle}</p>}
+                  <p class="small muted prog-meta"><span><Icon name="user" size={14} />{name(p.presenter)}</span><span><Icon name="users" size={14} />{p.audience}</span></p>
+                </div>
+              </article>
+            ))}
+            {classes.officeHours.filter((o) => o.day === d).map((o) => (
+              <a href="/office-hours" class="card prog office">
+                <div class="prog-time"><strong>{o.time}</strong></div>
+                <div class="prog-body"><span class="chip"><Icon name="calendar" size={14} />Office hours</span><h3>Meet Sh. Burhan Hamdan</h3><p class="small muted">{classes.officeLocation} · Book a time →</p></div>
+              </a>
+            ))}
+            {byDay[d].length === 0 && d !== 'Fri' && <p class="muted">No scheduled programs.</p>}
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <div class="print-row">
+      <a href="/library/weekly-schedule" class="btn"><Icon name="page" />Printable timetable</a>
+      <a href="/ask" class="btn btn-ghost">Suggest a class topic</a>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { todayDay } from '../lib/upcoming';
+  const tabs = document.querySelectorAll<HTMLButtonElement>('[data-day]');
+  const panels = document.querySelectorAll<HTMLElement>('[data-panel]');
+  const today = todayDay();
+  document.querySelector(`[data-panel="${today}"]`)?.classList.add('is-today');
+  document.querySelector(`[data-day="${today}"]`)?.classList.add('is-today');
+  function show(day: string) {
+    tabs.forEach((t) => t.setAttribute('aria-selected', String(t.dataset.day === day)));
+    panels.forEach((p) => (p.hidden = day !== 'all' && p.dataset.panel !== day));
+    document.querySelector('.days')!.classList.toggle('week', day === 'all');
+  }
+  tabs.forEach((t) => t.addEventListener('click', () => { show(t.dataset.day!); history.replaceState(null, '', `#${t.dataset.day}`); }));
+  show(location.hash.slice(1) || today);
+</script>
+
+<style>
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+  .day-tabs {
+    display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; padding: 6px; border-radius: 18px;
+    background: var(--surface); border: 1px solid var(--line); position: sticky; top: calc(var(--nav-h) + env(safe-area-inset-top) + 8px); z-index: 5; box-shadow: var(--shadow);
+  }
+  .day-tabs button { display: grid; justify-items: center; gap: 2px; padding: 8px 0; border-radius: 12px; border: 0; background: transparent; color: var(--ink-2); font-weight: 600; position: relative; }
+  .day-tabs button:hover { background: var(--surface-2); }
+  .day-tabs button[aria-selected='true'] { background: var(--ink); color: var(--bg); }
+  .day-tabs button.is-today::after { content: ''; position: absolute; top: 6px; right: calc(50% - 18px); width: 6px; height: 6px; border-radius: 50%; background: var(--clay); }
+  .d-short { font-size: 14px; }
+  .d-count { font-size: 11px; opacity: 0.6; }
+  .week-tab { align-content: center; }
+  @media (max-width: 420px) { .d-short { font-size: 13px; } .day-tabs { gap: 2px; padding: 4px; } }
+  .days { margin-top: 24px; display: grid; gap: 32px; }
+  .days.week { grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); align-items: start; gap: 28px 20px; }
+  .day-h { font-size: 26px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+  .today-badge { display: none; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; padding: 4px 8px; border-radius: 6px; background: var(--clay-soft); color: var(--clay); }
+  .day.is-today .today-badge { display: inline-block; }
+  .day-list { display: grid; gap: 12px; }
+  .prog { display: grid; grid-template-columns: 112px 1fr; gap: 18px; padding: 18px; }
+  .days.week .prog { grid-template-columns: 1fr; gap: 6px; }
+  @media (max-width: 560px) { .prog { grid-template-columns: 1fr; gap: 6px; } }
+  .prog-time strong { font-size: 15px; letter-spacing: -0.01em; color: var(--ink); }
+  .prog-body { display: grid; gap: 6px; justify-items: start; }
+  .prog-body h3 { font-size: 19px; }
+  .prog-ar { font-size: 18px; color: var(--teal); line-height: 1.4; }
+  .prog-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+  .prog-meta span { display: inline-flex; align-items: center; gap: 5px; }
+  .jumuah { background: linear-gradient(120deg, var(--clay-soft), var(--surface) 60%); }
+  .office { background: var(--surface-2); }
+  .print-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 36px; }
+</style>

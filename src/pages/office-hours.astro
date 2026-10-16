@@ -1,0 +1,67 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import site from '../data/site.json';
+import classes from '../data/classes.json';
+const FULL: Record<string, string> = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday' };
+const week = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => ({ d, o: classes.officeHours.find((x) => x.day === d) }));
+---
+<Base title="Office hours" description="Book a one-on-one meeting with Sheikh Burhan Hamdan at the Islamic Center of Tucson.">
+  <section class="wrap page-hero">
+    <p class="eyebrow">Office hours</p>
+    <h1>Sit with <span class="serif">the Imam.</span></h1>
+    <p class="lead">Meet Sheikh Burhan Hamdan in confidence about faith, family or anything on your heart.</p>
+    <div class="btn-row hero-ctas">
+      <a href={site.bookingUrl} class="btn btn-primary" target="_blank" rel="noopener"><Icon name="calendar" />Book a time</a>
+      <a href="/ask" class="btn"><Icon name="message" />Ask online instead</a>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="oh-grid">
+      <div class="card">
+        <h2 class="h">Weekly hours</h2>
+        <p class="small muted">{classes.officeLocation} · {site.center}</p>
+        <ul class="hours" data-today-hours>
+          {week.map(({ d, o }) => (
+            <li data-d={d} class:list={{ off: !o }}><span>{FULL[d]}</span><strong>{o ? o.time : 'Closed'}</strong></li>
+          ))}
+        </ul>
+        <p class="tiny muted">Hours may change in Ramadan. Booking guarantees your slot.</p>
+      </div>
+      <div class="card expect">
+        <h2 class="h">What to expect</h2>
+        <ol>
+          <li><span class="icon-tile"><Icon name="calendar" /></span><div><strong>Pick a slot</strong><p class="small muted">Choose a time on the booking calendar.</p></div></li>
+          <li><span class="icon-tile gold"><Icon name="pin" /></span><div><strong>Come to the ICT office</strong><p class="small muted">{site.address}</p></div></li>
+          <li><span class="icon-tile clay"><Icon name="heart" /></span><div><strong>Speak freely</strong><p class="small muted">Conversations are private.</p></div></li>
+        </ol>
+        <a href={site.bookingUrl} class="btn btn-accent" target="_blank" rel="noopener"><Icon name="external" />Open booking calendar</a>
+      </div>
+    </div>
+  </section>
+
+</Base>
+
+<script>
+  import { todayDay } from '../lib/upcoming';
+  document.querySelector(`[data-today-hours] [data-d="${todayDay()}"]`)?.classList.add('today');
+</script>
+
+<style>
+  .hero-ctas { margin-top: 26px; }
+  .oh-grid { display: grid; gap: 16px; }
+  @media (min-width: 900px) { .oh-grid { grid-template-columns: 1fr 1.2fr; } }
+  .h { font-size: 24px; margin-bottom: 4px; }
+  .hours { list-style: none; margin: 18px 0 14px; padding: 0; }
+  .hours li { display: flex; justify-content: space-between; padding: 12px 10px; border-top: 1px solid var(--line); font-size: 16px; }
+  .hours li:first-child { border-top: 0; }
+  .hours li.off { color: var(--muted); }
+  .hours li.off strong { font-weight: 500; }
+  .hours li.today { background: var(--teal-soft); border-radius: 12px; border-color: transparent; color: var(--teal-ink); }
+  .hours li.today + li { border-top-color: transparent; }
+  .expect ol { list-style: none; padding: 0; margin: 18px 0 22px; display: grid; gap: 18px; }
+  .expect li { display: flex; gap: 14px; align-items: flex-start; }
+  .topics h3 { margin-bottom: 14px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+</style>

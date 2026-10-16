@@ -1,0 +1,87 @@
+---
+import Icon from './Icon.astro';
+import { PRAYERS } from '../lib/prayer';
+interface Props { variant?: 'card' | 'full' }
+const { variant = 'card' } = Astro.props;
+---
+<section class:list={['prayer-today', variant]} data-prayer-today aria-label="Today's prayer times in Tucson">
+  <div class="pt-head">
+    <div>
+      <p class="pt-kicker"><Icon name="pin" size={14} /> Tucson, AZ · <span data-greg>Today</span></p>
+      <p class="pt-hijri"><span data-hijri>&nbsp;</span> <span class="arabic" lang="ar" data-hijri-ar></span></p>
+    </div>
+    <div class="pt-next" aria-live="polite">
+      <span class="tiny muted">Next</span>
+      <strong data-next-name>&nbsp;</strong>
+      <span class="pt-count" data-next-in>&nbsp;</span>
+    </div>
+  </div>
+  <ol class="pt-list">
+    {PRAYERS.map((p) => (
+      <li data-p={p.key}>
+        <span class="pt-name">{p.label}<span class="arabic" lang="ar">{p.arabic}</span></span>
+        <time data-time>--:--</time>
+      </li>
+    ))}
+  </ol>
+  <noscript><p class="small muted">Turn on JavaScript to see live prayer times.</p></noscript>
+</section>
+
+<script>
+  import site from '../data/site.json';
+  import { prayerTimes, localDate, formatTime, nextPrayer, countdown, PRAYERS } from '../lib/prayer';
+  import { hijriLabel } from '../lib/islamic';
+
+  const { lat, lng, utcOffset, timezone } = site.location;
+  const cfg = { lat, lng, utcOffset, fajrAngle: site.prayer.fajrAngle, ishaAngle: site.prayer.ishaAngle, asrFactor: site.prayer.asrFactor };
+
+  function tick() {
+    const now = new Date();
+    const today = localDate(utcOffset, now);
+    const times = prayerTimes(today, cfg);
+    let next = nextPrayer(times, now);
+    let nextAt = next ? times[next] : null;
+    if (!next) {
+      const t = localDate(utcOffset, new Date(now.getTime() + 86400_000));
+      next = 'fajr'; nextAt = prayerTimes(t, cfg).fajr;
+    }
+    const h = hijriLabel(now, timezone);
+    document.querySelectorAll<HTMLElement>('[data-prayer-today]').forEach((root) => {
+      root.querySelector('[data-hijri]')!.textContent = h.text;
+      root.querySelector('[data-hijri-ar]')!.textContent = h.arabic;
+      root.querySelector('[data-greg]')!.textContent = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone: timezone }).format(now);
+      root.querySelector('[data-next-name]')!.textContent = PRAYERS.find((p) => p.key === next)!.label;
+      root.querySelector('[data-next-in]')!.textContent = `in ${countdown(nextAt!.getTime() - now.getTime())}`;
+      root.querySelectorAll<HTMLElement>('[data-p]').forEach((li) => {
+        const k = li.dataset.p as keyof typeof times;
+        li.querySelector('[data-time]')!.textContent = formatTime(times[k], timezone);
+        li.classList.toggle('is-next', k === next && !!nextPrayer(times, now));
+        li.classList.toggle('is-past', times[k] < now && k !== next);
+      });
+    });
+  }
+  tick();
+  setInterval(tick, 30_000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+</script>
+
+<style>
+  .prayer-today { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l); padding: clamp(18px, 3vw, 26px); box-shadow: var(--shadow-l); }
+  .pt-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+  .pt-kicker { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .pt-hijri { margin-top: 4px; font-size: 19px; font-weight: 650; letter-spacing: -0.02em; }
+  .pt-hijri .arabic { display: block; font-size: 16px; color: var(--teal); font-weight: 400; line-height: 1.6; direction: rtl; text-align: left; }
+  .pt-next { text-align: right; display: grid; justify-items: end; line-height: 1.15; }
+  .pt-next strong { font-size: 26px; letter-spacing: -0.03em; }
+  .pt-count { font-size: 13px; font-weight: 600; color: var(--clay); font-variant-numeric: tabular-nums; }
+  .pt-list { list-style: none; margin: 16px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .full .pt-list { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+  .pt-list li { padding: 10px 12px; border-radius: 14px; background: var(--surface-2); border: 1px solid transparent; display: grid; gap: 2px; transition: all 0.3s var(--ease); }
+  .pt-name { display: flex; justify-content: space-between; align-items: baseline; gap: 4px; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .pt-name .arabic { font-size: 13px; line-height: 1; }
+  .pt-list time { font-size: 18px; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pt-list li.is-next { background: var(--teal); border-color: var(--teal); color: var(--accent-ink); }
+  .pt-list li.is-next .pt-name { color: inherit; opacity: 0.85; }
+  .pt-list li.is-past { opacity: 0.55; }
+  @media (max-width: 440px) { .pt-list time { font-size: 15.5px; } .pt-list li { padding: 9px 10px; } }
+</style>

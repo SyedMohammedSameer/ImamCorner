@@ -1,0 +1,97 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import FormDone from '../components/FormDone.astro';
+const services = [
+  { id: 'nikah', icon: 'rings', tone: 'clay', title: 'Nikah', lead: 'Begin your marriage with barakah.', points: ['Pre-marital meeting with the couple', 'Guidance on wali, witnesses and mahr', 'Officiating at the masjid or your venue'], note: 'Request at least 3 to 4 weeks ahead.' },
+  { id: 'janazah', icon: 'leaf', tone: 'green', title: 'Janazah', lead: 'You are not alone in this.', points: ['Guidance on ghusl and shrouding', 'Janazah prayer at the masjid', 'Coordination with the funeral home'], note: 'In the event of a death, call the masjid right away.' },
+  { id: 'counseling', icon: 'heart', tone: 'clay', title: 'Counseling', lead: 'Confidential, faith-centered support.', points: ['Marriage and family', 'Spiritual struggles and doubts', 'Grief and life transitions'], note: 'For a mental-health emergency, call or text 988.' },
+  { id: 'visits', icon: 'hospital', tone: '', title: 'Hospital & home visits', lead: 'Bringing the community to your bedside.', points: ['Visits to the sick in hospital', 'Visits to the elderly and homebound'], note: '' },
+  { id: 'shahadah', icon: 'sparkles', tone: 'gold', title: 'Shahadah', lead: 'Welcome home.', points: ['Take your shahadah with the Imam', 'Certificate of Islam (for Hajj and Umrah visas)'], note: '', link: '/new-muslims' },
+];
+---
+<Base title="Services" description="Nikah, janazah, counseling, visits and shahadah at the Islamic Center of Tucson.">
+  <section class="wrap page-hero">
+    <p class="eyebrow">Services</p>
+    <h1>With you <span class="serif">in every season.</span></h1>
+    <p class="lead">In celebration and in hardship, the Imam's office is here for you.</p>
+  </section>
+
+  <section class="wrap">
+    <div class="svc-grid">
+      {services.map((s) => (
+        <article class="card svc reveal" id={s.id}>
+          <div class="svc-head"><span class={`icon-tile ${s.tone}`}><Icon name={s.icon} /></span><div><h2>{s.title}</h2><p class="small muted">{s.lead}</p></div></div>
+          <ul>{s.points.map((p) => <li><Icon name="check" size={16} />{p}</li>)}</ul>
+          {s.note && <p class="tiny note">{s.note}</p>}
+          <div class="btn-row">
+            <a href={`?service=${s.id}#request`} class="btn btn-sm" data-pick={s.id}>Request</a>
+            {s.link && <a href={s.link} class="btn btn-ghost btn-sm">Learn more<Icon name="arrow-right" /></a>}
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="wrap section" id="request">
+    <div class="req-grid">
+      <div>
+        <p class="eyebrow">Request a service</p>
+        <h2>Tell us how we can help.</h2>
+        <p class="lead">Share a few details and we'll reach out.</p>
+      </div>
+      <div>
+        <form name="service-request" method="POST" action="/thanks" data-netlify="true" netlify-honeypot="bot-field" class="card form">
+          <input type="hidden" name="form-name" value="service-request" />
+          <p hidden><label>Don't fill this out: <input name="bot-field" /></label></p>
+          <div class="form-grid">
+            <div class="field full">
+              <label for="service">Service</label>
+              <select id="service" name="service" class="select" required>
+                {services.map((s) => <option value={s.id}>{s.title}</option>)}
+                <option value="other">Something else</option>
+              </select>
+            </div>
+            <div class="field"><label for="s-name">Full name</label><input id="s-name" name="name" class="input" required autocomplete="name" /></div>
+            <div class="field"><label for="s-phone">Phone</label><input id="s-phone" name="phone" type="tel" class="input" required autocomplete="tel" inputmode="tel" /></div>
+            <div class="field"><label for="s-email">Email</label><input id="s-email" name="email" type="email" class="input" autocomplete="email" /></div>
+            <div class="field"><label for="s-date">Preferred date <span class="muted">(if any)</span></label><input id="s-date" name="date" type="date" class="input" /></div>
+            <div class="field full"><label for="s-details">Details</label><textarea id="s-details" name="details" class="textarea" placeholder="Anything that will help us prepare"></textarea></div>
+          </div>
+          <p class="form-err small" data-form-error hidden></p>
+          <div class="form-actions"><button class="btn btn-primary" type="submit">Send request</button></div>
+        </form>
+        <FormDone name="service-request" title="Request received.">We'll contact you soon, insha'Allah. For anything urgent, call the masjid.</FormDone>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  document.querySelectorAll<HTMLAnchorElement>('[data-pick]').forEach((a) => a.addEventListener('click', (e) => {
+    e.preventDefault();
+    const sel = document.querySelector<HTMLSelectElement>('#service')!;
+    sel.value = a.dataset.pick!;
+    document.querySelector('#request')!.scrollIntoView({ behavior: 'smooth' });
+    setTimeout(() => document.querySelector<HTMLInputElement>('#s-name')?.focus({ preventScroll: true }), 500);
+  }));
+</script>
+
+<style>
+  .svc-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
+  .svc { display: flex; flex-direction: column; gap: 16px; scroll-margin-top: calc(var(--nav-h) + 20px); }
+  .svc:target { border-color: var(--teal); box-shadow: 0 0 0 4px var(--teal-soft), var(--shadow); }
+  .svc-head { display: flex; gap: 14px; align-items: center; }
+  .svc-head h2 { font-size: 24px; }
+  .svc ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; font-size: 15px; color: var(--ink-2); }
+  .svc li { display: flex; gap: 10px; align-items: flex-start; }
+  .svc li :global(svg) { color: var(--saguaro); flex: none; margin-top: 4px; }
+  .note { padding: 10px 12px; border-radius: 10px; background: var(--gold-soft); color: var(--ink-2); }
+  .svc .btn-row { margin-top: auto; }
+  .req-grid { display: grid; gap: 28px; }
+  @media (min-width: 960px) { .req-grid { grid-template-columns: 1fr 1.4fr; } .req-grid > div:first-child { position: sticky; top: calc(var(--nav-h) + 32px); align-self: start; } }
+  .req-grid h2 { margin: 10px 0 14px; }
+  .form { padding: clamp(20px, 4vw, 32px); }
+  .form-actions { margin-top: 22px; }
+  .form-err { color: var(--clay); margin-top: 12px; }
+</style>

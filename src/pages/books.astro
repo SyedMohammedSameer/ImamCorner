@@ -1,0 +1,93 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { getCollection } from 'astro:content';
+
+const books = (await getCollection('books')).sort((a, b) => a.data.order - b.data.order);
+const CATS = ['Start here', 'Qur’an & Tafsir', 'Prophetic biography', 'Hadith', 'Belief', 'Spirituality', 'Family & youth'] as const;
+const groups = CATS.map((c) => ({ c, items: books.filter((b) => b.data.category === c) })).filter((g) => g.items.length);
+const PALETTE = [['#0e6b66', '#2aa79b'], ['#a8461f', '#e07a4c'], ['#3e6b4b', '#6f9a78'], ['#8a6420', '#d6ad55'], ['#5a3f6b', '#9b78ad'], ['#1d3a5f', '#4e7bb0']];
+const path = ['saheeh-international', 'fortress-of-the-muslim', 'sealed-nectar', 'forty-hadith'].map((id) => books.find((b) => b.id === id)).filter(Boolean);
+const find = (b: any) => b.data.link ?? `https://www.google.com/search?tbm=bks&q=${encodeURIComponent(`${b.data.title} ${b.data.author}`)}`;
+---
+<Base title="Recommended books" description="A reading list from the Imams of the Islamic Center of Tucson.">
+  <section class="wrap page-hero">
+    <p class="eyebrow">Recommended reading</p>
+    <h1>Books worth <span class="serif">a lifetime.</span></h1>
+    <p class="lead">Trusted translations and classical works, from first steps to deeper study.</p>
+  </section>
+
+  <section class="wrap">
+    <div class="path card reveal">
+      <div class="path-head">
+        <span class="icon-tile gold"><Icon name="sparkles" /></span>
+        <div><h2>New here? Start with these four.</h2><p class="small muted">For new Muslims and anyone returning to their deen.</p></div>
+      </div>
+      <ol class="path-list">
+        {path.map((b: any, i) => <li><span class="step">{i + 1}</span><div><strong>{b.data.title}</strong><span class="small muted">{b.data.author}</span></div></li>)}
+      </ol>
+    </div>
+  </section>
+
+  {groups.map((g) => (
+    <section class="wrap shelf">
+      <h2 class="shelf-h reveal">{g.c}</h2>
+      <div class="grid grid-3">
+        {g.items.map((b) => { const [c1, c2] = PALETTE[b.data.order % PALETTE.length]; return (
+          <article class="card book reveal">
+            <div class="book-cover" style={`--c1:${c1};--c2:${c2}`} aria-hidden="true">
+              <span class="bc-spine"></span>
+              <span class="bc-title">{b.data.title.split(' (')[0]}</span>
+              <span class="bc-author">{b.data.author}</span>
+            </div>
+            <div class="book-body">
+              <span class={`chip ${b.data.level === 'Beginner' ? 'chip-green' : b.data.level === 'Intermediate' ? 'chip-gold' : 'chip-clay'}`}>{b.data.level}</span>
+              <h3>{b.data.title}</h3>
+              <p class="small muted">{b.data.author}</p>
+              <p class="small why">{b.data.why}</p>
+              <div class="book-links">
+                {b.data.resource ? <a href={`/library/${b.data.resource.id}`} class="btn btn-accent btn-sm"><Icon name="book" />Read now</a> : <a href={find(b)} class="btn btn-sm" target="_blank" rel="noopener"><Icon name="search" />Find this book</a>}
+              </div>
+            </div>
+          </article>
+        ); })}
+      </div>
+    </section>
+  ))}
+
+  <section class="wrap section-tight">
+    <div class="card card-tint suggest reveal">
+      <div><h3>Looking for something specific?</h3><p class="small muted">Ask the Imam for a recommendation.</p></div>
+      <a href="/ask?topic=Book%20recommendation" class="btn btn-primary">Ask for a recommendation</a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .path { padding: clamp(22px, 4vw, 36px); background: linear-gradient(135deg, var(--gold-soft), var(--surface) 70%); }
+  .path-head { display: flex; gap: 16px; align-items: flex-start; }
+  .path-head h2 { font-size: clamp(22px, 3vw, 28px); margin-bottom: 4px; }
+  .path-list { list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); counter-reset: s; }
+  .path-list li { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
+  .path-list li > div { display: grid; line-height: 1.3; gap: 2px; }
+  .step { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--bg); font-size: 13px; font-weight: 700; }
+  .shelf { margin-top: clamp(40px, 7vw, 72px); }
+  .shelf-h { font-size: clamp(26px, 3.4vw, 34px); margin-bottom: 20px; }
+  .book { display: grid; grid-template-columns: 104px 1fr; gap: 18px; padding: 16px; align-items: start; }
+  .book-cover {
+    position: relative; aspect-ratio: 2 / 3; border-radius: 4px 10px 10px 4px; padding: 12px 10px 10px 16px; overflow: hidden;
+    background: linear-gradient(160deg, var(--c1), var(--c2)); color: #fff; display: flex; flex-direction: column; justify-content: space-between;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1), 6px 10px 22px -10px rgba(0, 0, 0, 0.5); transition: transform 0.4s var(--ease);
+  }
+  .book:hover .book-cover { transform: rotate(-2deg) translateY(-3px); }
+  .book-cover::after { content: ''; position: absolute; inset: auto -20px -20px auto; width: 80px; height: 80px; opacity: 0.2; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M20 1.5 25.3 7.2 33.1 6.9 32.8 14.7 38.5 20 32.8 25.3 33.1 33.1 25.3 32.8 20 38.5 14.7 32.8 6.9 33.1 7.2 25.3 1.5 20 7.2 14.7 6.9 6.9 14.7 7.2Z' fill='none' stroke='white'/%3E%3C/svg%3E") center/contain no-repeat; }
+  .bc-spine { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: rgba(0, 0, 0, 0.18); }
+  .bc-title { font-family: var(--font-serif); font-size: 15px; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+  .bc-author { font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.85; }
+  .book-body { display: grid; gap: 6px; justify-items: start; }
+  .book-body h3 { font-size: 18px; }
+  .why { color: var(--ink-2); }
+  .book-links { margin-top: 6px; }
+  .suggest { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center; }
+  .suggest > div { max-width: 560px; }
+</style>

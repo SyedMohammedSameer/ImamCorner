@@ -1,0 +1,63 @@
+---
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import site from '../data/site.json';
+import { NAV } from '../data/nav';
+const year = new Date().getFullYear();
+---
+<footer class="site-footer">
+  <svg class="skyline" viewBox="0 0 1440 120" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 120V78l90-30 70 22 110-46 90 38 80-18 120 40 70-24 60 10 100-44 90 30 130-40 110 48 80-20 90 26 70-16 90 30v74Z" fill="var(--bg-2)" />
+  </svg>
+  <div class="foot">
+    <div class="wrap">
+      <div class="grid top">
+        <div class="about">
+          <a href="/" class="brand"><Logo size={36} /><strong>Imam's Corner</strong></a>
+          <p class="muted">{site.tagline}</p>
+          <p class="arabic dua" lang="ar">رَبَّنَا تَقَبَّلْ مِنَّا إِنَّكَ أَنتَ السَّمِيعُ الْعَلِيمُ</p>
+        </div>
+        <div>
+          <h4>Explore</h4>
+          <ul>{NAV.slice(1, 7).map((n) => <li><a href={n.href}>{n.label}</a></li>)}</ul>
+        </div>
+        <div>
+          <h4>Get help</h4>
+          <ul>{NAV.slice(7).map((n) => <li><a href={n.href}>{n.label}</a></li>)}</ul>
+        </div>
+        <div>
+          <h4>Visit</h4>
+          <ul class="contact">
+            <li><Icon name="pin" size={16} /><a href={site.mapsUrl} target="_blank" rel="noopener">{site.center}<br />{site.address}</a></li>
+            <li><Icon name="mail" size={16} /><a href={`mailto:${site.email}`}>{site.email}</a></li>
+            <li><Icon name="external" size={16} /><a href={site.centerWebsite} target="_blank" rel="noopener">ictucson.org</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="bottom">
+        <span>© {year} {site.center}</span>
+        <span class="muted">Made with care in Tucson, Arizona · <a href="/admin/">Staff</a></span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer { margin-top: clamp(40px, 8vw, 96px); }
+  .skyline { width: 100%; height: clamp(50px, 8vw, 110px); display: block; margin-bottom: -1px; }
+  .foot { background: var(--bg-2); padding: 24px 0 calc(var(--tab-h) + env(safe-area-inset-bottom) + 28px); }
+  @media (min-width: 900px) { .foot { padding-bottom: 36px; } }
+  .top { grid-template-columns: 1fr; gap: 32px; }
+  @media (min-width: 720px) { .top { grid-template-columns: 1.6fr 1fr 1fr 1.4fr; } }
+  .brand { display: inline-flex; align-items: center; gap: 10px; font-size: 18px; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .about p { max-width: 320px; font-size: 15px; }
+  .dua { margin-top: 14px; font-size: 20px; color: var(--teal); text-align: left; direction: rtl; }
+  h4 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; margin-bottom: 12px; }
+  ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 9px; font-size: 15px; }
+  ul a { color: var(--ink-2); transition: color 0.2s; }
+  ul a:hover { color: var(--teal); }
+  .contact li { display: flex; gap: 10px; align-items: flex-start; }
+  .contact :global(svg) { margin-top: 4px; color: var(--muted); flex: none; }
+  .bottom { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--ink-2); }
+  .bottom a { text-decoration: underline; text-underline-offset: 2px; }
+</style>

@@ -1,0 +1,76 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { getCollection, render } from 'astro:content';
+import classes from '../data/classes.json';
+import site from '../data/site.json';
+
+const imams = (await getCollection('imams')).sort((a, b) => a.data.order - b.data.order);
+const rendered = await Promise.all(imams.map(async (i) => ({ entry: i, Content: (await render(i)).Content })));
+const DAYN: Record<string, string> = { Mon: 'Mon', Tue: 'Tue', Wed: 'Wed', Thu: 'Thu', Fri: 'Fri', Sat: 'Sat', Sun: 'Sun' };
+---
+<Base title="Our Imams" description="Meet Sheikh Burhan Hamdan and Sheikh Amir Koshin of the Islamic Center of Tucson.">
+  <section class="wrap page-hero">
+    <p class="eyebrow">Our Imams</p>
+    <h1>Scholars, teachers, <span class="serif">neighbours.</span></h1>
+    <p class="lead">The Imams of the Islamic Center of Tucson lead the prayers, give the khutbah and teach through the week.</p>
+  </section>
+
+  {rendered.map(({ entry: im, Content }, idx) => {
+    const teaches = classes.programs.filter((p) => p.presenter === im.id);
+    const initials = im.data.name.split(' ').slice(1).map((w) => w[0]).join('');
+    return (
+      <section class="wrap imam-sec" id={im.id}>
+        <div class:list={['imam-grid', { flip: idx % 2 }]}>
+          <div class="portrait-col reveal">
+            <div class="portrait arch">
+              {im.data.photo ? <img src={im.data.photo} alt={im.data.name} loading="lazy" /> : (
+                <div class="portrait-art" aria-hidden="true">
+                  <svg viewBox="0 0 200 260" preserveAspectRatio="xMidYMid slice"><defs><pattern id={`p-${im.id}`} width="40" height="40" patternUnits="userSpaceOnUse"><path d="M20 2 25.5 14.5 38 20 25.5 25.5 20 38 14.5 25.5 2 20 14.5 14.5Z" fill="none" stroke="#fff" stroke-opacity=".22" /></pattern></defs><rect width="200" height="260" fill={`url(#p-${im.id})`} /></svg>
+                  <span>{initials}</span>
+                </div>
+              )}
+            </div>
+          </div>
+          <div class="bio reveal">
+            <p class="eyebrow">{im.data.role}</p>
+            <h2>{im.data.name}</h2>
+            <div class="prose"><Content /></div>
+            {im.data.focus.length > 0 && <div class="chips">{im.data.focus.map((f) => <span class="chip">{f}</span>)}</div>}
+            {teaches.length > 0 && (
+              <div class="teaches card card-tint">
+                <h3>Teaches</h3>
+                <ul>{teaches.map((p) => <li><span>{p.title}</span><span class="small muted">{p.days.map((d) => DAYN[d]).join(' · ')} · {p.time}</span></li>)}</ul>
+              </div>
+            )}
+            <div class="btn-row">
+              {im.data.email && <a href={`mailto:${im.data.email}`} class="btn"><Icon name="mail" />Email</a>}
+              {im.id === 'burhan-hamdan' && <a href="/office-hours" class="btn btn-primary"><Icon name="calendar" />Book office hours</a>}
+              <a href="/ask" class="btn btn-ghost"><Icon name="message" />Ask a question</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  })}
+</Base>
+
+<style>
+  .imam-sec { padding-block: clamp(28px, 6vw, 72px); scroll-margin-top: calc(var(--nav-h) + 20px); }
+  .imam-grid { display: grid; gap: clamp(28px, 5vw, 72px); align-items: start; }
+  @media (min-width: 880px) { .imam-grid { grid-template-columns: 0.8fr 1.2fr; } .imam-grid.flip .portrait-col { order: 2; } .portrait-col { position: sticky; top: calc(var(--nav-h) + 24px); } }
+  .portrait { aspect-ratio: 4 / 5; max-width: 420px; background: linear-gradient(165deg, var(--teal), #1f8f86 45%, var(--clay)); box-shadow: var(--shadow-l); }
+  .portrait img { width: 100%; height: 100%; object-fit: cover; }
+  .portrait-art { position: relative; width: 100%; height: 100%; display: grid; place-items: center; }
+  .portrait-art svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .portrait-art span { position: relative; font-size: clamp(64px, 10vw, 110px); font-weight: 700; color: #fff; letter-spacing: -0.06em; }
+  @media (max-width: 879px) { .portrait { max-width: 260px; } }
+  .bio h2 { margin: 10px 0 18px; font-size: clamp(34px, 5vw, 54px); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 20px; }
+  .teaches { margin-top: 24px; }
+  .teaches h3 { font-size: 15px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 8px; }
+  .teaches ul { list-style: none; margin: 0; padding: 0; }
+  .teaches li { display: grid; gap: 2px; padding: 10px 0; border-top: 1px solid var(--line); font-weight: 600; }
+  .teaches li:first-child { border-top: 0; }
+  .btn-row { margin-top: 24px; }
+</style>

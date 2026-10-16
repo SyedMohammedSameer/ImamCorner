@@ -1,0 +1,173 @@
+---
+import Icon from './Icon.astro';
+interface Props { src: string; title: string }
+const { src, title } = Astro.props;
+---
+<div class="reader" data-reader data-src={src} data-title={title} tabindex="-1">
+  <div class="r-bar" role="toolbar" aria-label="Reader controls">
+    <div class="r-group">
+      <button class="r-btn hide-sm" data-act="prev" aria-label="Previous page"><Icon name="chevron-up" /></button>
+      <label class="r-page">
+        <span class="sr-only">Page</span>
+        <input data-page type="number" inputmode="numeric" min="1" value="1" aria-label="Current page" />
+        <span class="r-of">/ <span data-count>–</span></span>
+      </label>
+      <button class="r-btn hide-sm" data-act="next" aria-label="Next page"><Icon name="chevron-down" /></button>
+    </div>
+
+    <div class="r-group r-zoom">
+      <button class="r-btn" data-act="zoom-out" aria-label="Zoom out"><Icon name="minus" /></button>
+      <span class="r-zoom-label" data-zoom>100%</span>
+      <button class="r-btn" data-act="zoom-in" aria-label="Zoom in"><Icon name="plus" /></button>
+      <button class="r-btn" data-act="fit" aria-label="Fit page"><Icon name="fit" /></button>
+    </div>
+
+    <div class="r-group">
+      <button class="r-btn" data-act="search" aria-label="Search in document" title="Search (⌘F)"><Icon name="search" /></button>
+      <button class="r-btn hide-sm" data-act="night" aria-label="Night mode" title="Night mode"><Icon name="moon" /></button>
+      <button class="r-btn hide-sm" data-act="share" aria-label="Share this page"><Icon name="share" /></button>
+      <button class="r-btn hide-sm" data-act="offline" aria-label="Save offline" title="Save offline"><Icon name="offline" /><span class="sr-only">Save offline</span></button>
+      <a class="r-btn hide-sm" href={src} download aria-label="Download PDF" title="Download"><Icon name="download" /></a>
+      <button class="r-btn" data-act="focus" aria-label="Focus mode" title="Focus mode"><Icon name="expand" class="i-expand" /><Icon name="shrink" class="i-shrink" /></button>
+      <div class="r-more">
+        <button class="r-btn show-sm" data-act="more" aria-label="More options" aria-haspopup="menu"><Icon name="menu" /></button>
+        <div class="r-menu" data-menu-panel role="menu">
+          <button data-act="share" role="menuitem"><Icon name="share" /><span>Share this page</span></button>
+          <button data-act="offline" role="menuitem"><Icon name="offline" /><span>Save offline</span></button>
+          <button data-act="night" role="menuitem"><Icon name="moon" /><span>Night mode</span></button>
+          <a href={src} download role="menuitem"><Icon name="download" /><span>Download PDF</span></a>
+          <a href={src} target="_blank" rel="noopener" role="menuitem"><Icon name="external" /><span>Open original</span></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="r-find" data-findbar hidden>
+    <Icon name="search" size={18} />
+    <input data-find type="search" placeholder="Search in this document" aria-label="Search in document" enterkeyhint="search" />
+    <span class="r-find-count" data-find-count aria-live="polite"></span>
+    <button class="r-btn" data-act="find-prev" aria-label="Previous match"><Icon name="chevron-up" /></button>
+    <button class="r-btn" data-act="find-next" aria-label="Next match"><Icon name="chevron-down" /></button>
+    <button class="r-btn" data-act="find-close" aria-label="Close search"><Icon name="x" /></button>
+  </div>
+
+  <div class="r-stage">
+    <div class="r-progress"><i data-progress></i></div>
+    <div class="r-status" data-status>
+      <span class="spinner" aria-hidden="true"></span>
+      <span>Opening document…</span>
+    </div>
+    <div class="r-container" data-container>
+      <div class="pdfViewer"></div>
+    </div>
+    <span class="r-float" data-float aria-hidden="true"></span>
+    <div class="r-toast" data-toast role="status"></div>
+  </div>
+
+  <noscript><p class="r-noscript">The reader needs JavaScript. <a href={src}>Open the PDF directly</a>.</p></noscript>
+</div>
+
+<script>
+  import { mountViewer } from '../lib/viewer';
+  document.querySelectorAll<HTMLElement>('[data-reader]').forEach((el) => mountViewer(el));
+</script>
+
+<style>
+  .reader {
+    --r-bg: color-mix(in srgb, var(--bg-2) 70%, var(--bg));
+    position: relative; display: flex; flex-direction: column;
+    height: min(calc(100dvh - var(--nav-h) - 24px), 1100px); min-height: 480px;
+    background: var(--r-bg); border: 1px solid var(--line); border-radius: var(--radius-l); overflow: hidden;
+    box-shadow: var(--shadow); scroll-margin-top: calc(var(--nav-h) + env(safe-area-inset-top) + 8px);
+  }
+  @media (max-width: 899px) { .reader { height: calc(100dvh - var(--nav-h) - var(--tab-h) - env(safe-area-inset-bottom) - 20px); border-radius: var(--radius); } }
+  .reader.is-focus {
+    position: fixed; inset: 0; z-index: 200; height: 100dvh; border-radius: 0; border: 0;
+    padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);
+  }
+  :global(html.reader-focus) { overflow: hidden; }
+  .reader :global(.i-shrink) { display: none; }
+  .reader.is-focus :global(.i-shrink) { display: block; }
+  .reader.is-focus :global(.i-expand) { display: none; }
+
+  .r-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 10px;
+    background: var(--glass); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid var(--line); z-index: 3;
+  }
+  .r-group { display: flex; align-items: center; gap: 2px; }
+  .r-btn {
+    display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; border: 0; background: transparent; color: var(--ink-2);
+    transition: background 0.15s, color 0.15s;
+  }
+  .r-btn:hover { background: var(--line); color: var(--ink); }
+  .r-btn:active { transform: scale(0.94); }
+  .r-page { display: flex; align-items: center; gap: 6px; padding: 0 6px; font-size: 14px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .r-page input {
+    width: 46px; height: 32px; text-align: center; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--surface);
+    font-size: 15px; font-weight: 600; color: var(--ink); -moz-appearance: textfield;
+  }
+  .r-page input::-webkit-inner-spin-button, .r-page input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .r-zoom-label { min-width: 46px; text-align: center; font-size: 13px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .show-sm { display: none; }
+  @media (max-width: 680px) {
+    .hide-sm { display: none; }
+    .show-sm { display: grid; }
+    .r-zoom .r-btn[data-act='zoom-out'], .r-zoom .r-btn[data-act='zoom-in'], .r-zoom-label { display: none; }
+  }
+  .r-more { position: relative; }
+  .r-menu {
+    position: absolute; right: 0; top: calc(100% + 8px); min-width: 220px; padding: 6px; border-radius: 14px;
+    background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-l);
+    display: none; z-index: 10;
+  }
+  @media (min-width: 681px) { .r-menu { display: none !important; } }
+  .reader.menu-open .r-menu { display: grid; animation: pop 0.2s var(--ease); }
+  @keyframes pop { from { opacity: 0; transform: translateY(-6px) scale(0.98); } }
+  .r-menu button, .r-menu a { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 10px; border: 0; background: none; font-size: 15px; font-weight: 500; text-align: left; color: var(--ink); }
+  .r-menu button:hover, .r-menu a:hover { background: var(--surface-2); }
+  .r-menu :global(svg) { color: var(--muted); }
+  .reader :global(.saved svg) { color: var(--saguaro); }
+
+  .r-find {
+    display: flex; align-items: center; gap: 6px; padding: 6px 8px 6px 14px; border-bottom: 1px solid var(--line);
+    background: var(--surface); z-index: 2; color: var(--muted);
+  }
+  .r-find input { flex: 1; min-width: 0; height: 38px; border: 0; background: transparent; font-size: 16px; color: var(--ink); outline: none; }
+  .r-find-count { font-size: 13px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .r-find.not-found .r-find-count { color: var(--clay); }
+
+  .r-stage { position: relative; flex: 1; min-height: 0; }
+  .r-container { position: absolute; inset: 0; overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+  .r-container :global(.pdfViewer) { padding: 14px 0 40px; }
+  .r-container :global(.pdfViewer .page) {
+    margin: 0 auto 14px; border: 0 !important; border-radius: 4px; overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 10px 30px -12px rgba(0, 0, 0, 0.25);
+    background: #fff;
+  }
+  .reader.is-night .r-container :global(.page canvas) { filter: invert(0.92) hue-rotate(180deg) contrast(0.95); }
+  .reader.is-night .r-container :global(.page) { background: #111; }
+  .reader.is-night [data-act='night'] { color: var(--gold); }
+
+  .r-progress { position: absolute; top: 0; left: 0; right: 0; height: 3px; z-index: 4; overflow: hidden; }
+  .r-progress i { display: block; height: 100%; background: linear-gradient(90deg, var(--teal), var(--turquoise), var(--clay)); transform-origin: left; transform: scaleX(0.04); transition: transform 0.2s; }
+  .r-status { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 12px; text-align: center; color: var(--muted); font-size: 15px; padding: 24px; z-index: 1; }
+  .r-status :global(span) { display: block; }
+  .r-status :global(a) { color: var(--teal); text-decoration: underline; }
+  .reader.is-ready .r-status { display: none; }
+  .spinner { width: 28px; height: 28px; border-radius: 50%; border: 2.5px solid var(--line-strong); border-top-color: var(--teal); animation: spin 0.8s linear infinite; }
+  .reader.is-error .spinner { display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .r-float {
+    position: absolute; right: 14px; bottom: 14px; z-index: 3; padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 600;
+    background: rgba(20, 18, 16, 0.78); color: #fff; backdrop-filter: blur(8px); opacity: 0; transform: translateY(6px); transition: all 0.25s var(--ease); pointer-events: none; font-variant-numeric: tabular-nums;
+  }
+  .r-float:global(.show) { opacity: 1; transform: none; }
+  .r-toast {
+    position: absolute; left: 50%; bottom: 18px; transform: translate(-50%, 12px); z-index: 5; padding: 10px 16px; border-radius: 999px;
+    background: var(--ink); color: var(--bg); font-size: 14px; font-weight: 600; opacity: 0; transition: all 0.3s var(--ease); pointer-events: none; white-space: nowrap;
+  }
+  .r-toast:global(.show) { opacity: 1; transform: translate(-50%, 0); }
+  .r-noscript { padding: 20px; }
+</style>

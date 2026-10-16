@@ -1,0 +1,94 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import FormDone from '../components/FormDone.astro';
+const steps = [
+  { icon: 'sparkles', title: 'Say the shahadah', text: 'Say the testimony of faith sincerely, with the Imam, privately or after Jumu’ah.' },
+  { icon: 'sunrise', title: 'Learn to pray', text: 'Start with wudu and the basics of salah. Small, consistent steps.' },
+  { icon: 'users', title: 'Find your people', text: 'We’ll connect you with a mentor and the community.' },
+  { icon: 'book', title: 'Keep learning', text: 'Begin with our four-book starter path.' },
+];
+---
+<Base title="New to Islam" description="Taking shahadah, first steps and a welcoming community at the Islamic Center of Tucson.">
+  <section class="wrap page-hero nm-hero">
+    <p class="eyebrow">New to Islam</p>
+    <h1>Welcome. <span class="serif">You belong here.</span></h1>
+    <p class="lead">Curious, ready for shahadah, or newly Muslim? Take it one step at a time.</p>
+  </section>
+
+  <section class="wrap">
+    <div class="shahadah pattern reveal">
+      <p class="arabic sh-ar" lang="ar">أَشْهَدُ أَنْ لَا إِلَٰهَ إِلَّا ٱللَّٰهُ، وَأَشْهَدُ أَنَّ مُحَمَّدًا رَسُولُ ٱللَّٰهِ</p>
+      <p class="sh-tr"><em>Ash-hadu an lā ilāha illa-llāh, wa ash-hadu anna Muḥammadan rasūlu-llāh.</em></p>
+      <p class="sh-en">“I bear witness that there is no god but Allah, and I bear witness that Muhammad is the Messenger of Allah.”</p>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <ol class="steps">
+      {steps.map((s, i) => (
+        <li class="card reveal">
+          <span class="step-n">{i + 1}</span>
+          <span class="icon-tile"><Icon name={s.icon} /></span>
+          <h3>{s.title}</h3>
+          <p class="small muted">{s.text}</p>
+        </li>
+      ))}
+    </ol>
+    <div class="btn-row center">
+      <a href="/books" class="btn"><Icon name="book" />Starter reading path</a>
+      <a href="/classes" class="btn"><Icon name="graduation" />Classes this week</a>
+    </div>
+  </section>
+
+  <section class="wrap" id="connect">
+    <div class="nm-form-grid">
+      <div>
+        <h2>Let's talk.</h2>
+        <p class="lead">The Imam will reach out personally. No pressure.</p>
+      </div>
+      <div>
+        <form name="new-muslim" method="POST" action="/thanks" data-netlify="true" netlify-honeypot="bot-field" class="card form">
+          <input type="hidden" name="form-name" value="new-muslim" />
+          <p hidden><label>Don't fill this out: <input name="bot-field" /></label></p>
+          <div class="form-grid">
+            <div class="field full">
+              <label for="nm-want">I'd like to…</label>
+              <select id="nm-want" name="interest" class="select">
+                <option>Take my shahadah</option>
+                <option>Ask questions about Islam</option>
+                <option>Be connected with a mentor</option>
+                <option>Get a certificate of Islam</option>
+                <option>Learn how to pray</option>
+              </select>
+            </div>
+            <div class="field"><label for="nm-name">First name</label><input id="nm-name" name="name" class="input" required autocomplete="given-name" /></div>
+            <div class="field"><label for="nm-email">Email or phone</label><input id="nm-email" name="contact" class="input" required /></div>
+            <div class="field full"><label for="nm-msg">Anything you'd like us to know <span class="muted">(optional)</span></label><textarea id="nm-msg" name="message" class="textarea"></textarea></div>
+          </div>
+          <p class="form-err small" data-form-error hidden></p>
+          <div class="form-actions"><button class="btn btn-primary" type="submit">Reach out</button></div>
+        </form>
+        <FormDone name="new-muslim" title="We're so glad you reached out.">The Imam will contact you soon, insha'Allah.</FormDone>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .shahadah { text-align: center; padding: clamp(36px, 7vw, 80px) clamp(18px, 5vw, 64px); border-radius: var(--radius-l); background: linear-gradient(160deg, var(--teal), #13534f); color: #fff; overflow: hidden; }
+  .shahadah::before { filter: invert(1); opacity: 0.6; }
+  .sh-ar { font-size: clamp(26px, 4.6vw, 48px); line-height: 1.9; direction: rtl; text-align: center; }
+  .sh-tr { margin-top: 10px; font-size: clamp(16px, 2vw, 19px); opacity: 0.85; }
+  .sh-en { margin: 16px auto 0; max-width: 640px; font-family: var(--font-serif); font-size: clamp(22px, 3vw, 30px); line-height: 1.25; }
+  .steps { list-style: none; padding: 0; margin: 0; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); }
+  .steps li { display: grid; gap: 10px; align-content: start; }
+  .step-n { position: absolute; top: 18px; right: 22px; font-family: var(--font-serif); font-size: 44px; line-height: 1; color: var(--line-strong); }
+  .center { justify-content: center; margin-top: 28px; }
+  .nm-form-grid { display: grid; gap: 28px; }
+  @media (min-width: 960px) { .nm-form-grid { grid-template-columns: 1fr 1.4fr; } }
+  .nm-form-grid h2 { margin-bottom: 14px; }
+  .form { padding: clamp(20px, 4vw, 32px); }
+  .form-actions { margin-top: 22px; }
+  .form-err { color: var(--clay); margin-top: 12px; }
+</style>

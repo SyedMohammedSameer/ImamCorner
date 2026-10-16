@@ -1,0 +1,187 @@
+---
+import Base from '../layouts/Base.astro';
+import PrayerToday from '../components/PrayerToday.astro';
+import Icon from '../components/Icon.astro';
+import site from '../data/site.json';
+import { qiblaBearing, distanceToKaabaKm, compassPoint } from '../lib/islamic';
+const { lat, lng } = site.location;
+const bearing = qiblaBearing(lat, lng);
+const km = distanceToKaabaKm(lat, lng);
+---
+<Base title="Prayer times" description="Daily prayer times for Tucson, Arizona, the Hijri date, a monthly timetable and the qibla direction.">
+  <section class="wrap page-hero">
+    <p class="eyebrow">Salah</p>
+    <h1>Prayer times <span class="serif">for Tucson.</span></h1>
+    <p class="lead">Calculated for the Islamic Center of Tucson. Works offline.</p>
+  </section>
+
+  <section class="wrap">
+    <PrayerToday variant="full" />
+    <p class="tiny muted method"><Icon name="lightbulb" size={14} />{site.prayer.note} Asr: standard (Shafiʿi, Maliki, Hanbali).</p>
+  </section>
+
+  <section class="wrap section-tight">
+    <div class="month card">
+      <div class="month-head">
+        <button class="btn btn-ghost btn-icon" data-m="-1" aria-label="Previous month"><Icon name="chevron-left" /></button>
+        <div class="month-title"><h2 data-month-title>This month</h2><p class="small muted" data-month-hijri></p></div>
+        <button class="btn btn-ghost btn-icon" data-m="1" aria-label="Next month"><Icon name="chevron-right" /></button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Fajr</th><th>Sunrise</th><th>Dhuhr</th><th>Asr</th><th>Maghrib</th><th>Isha</th></tr></thead>
+          <tbody data-month-body></tbody>
+        </table>
+      </div>
+      <div class="month-foot"><button class="btn btn-sm" data-print><Icon name="page" />Print this month</button></div>
+    </div>
+  </section>
+
+  <section class="wrap section-tight">
+    <div class="card dates">
+      <h2>Coming up</h2>
+      <p class="small muted">Umm al-Qura dates. Local observance follows the masjid's announcement.</p>
+      <ol class="date-list" data-islamic-dates></ol>
+    </div>
+  </section>
+
+  <section class="wrap section-tight">
+    <div class="qibla card">
+      <div class="q-text">
+        <p class="eyebrow">Qibla</p>
+        <h2>Facing the Kaʿbah from Tucson</h2>
+        <p class="lead">The qibla is <strong>{bearing.toFixed(1)}°</strong> from true north ({compassPoint(bearing)}). Makkah is about {Math.round(km).toLocaleString('en-US')} km ({Math.round(km * 0.621371).toLocaleString('en-US')} mi) away.</p>
+        <div class="btn-row">
+          <button class="btn btn-accent" data-compass><Icon name="compass" />Use my phone's compass</button>
+        </div>
+        <p class="small muted" data-compass-status>Hold your phone flat and turn until the arrow points up.</p>
+      </div>
+      <div class="dial-wrap">
+        <div class="dial" data-dial style={`--q:${bearing}deg; --h:0deg`}>
+          <span class="n">N</span><span class="e">E</span><span class="s">S</span><span class="w">W</span>
+          <div class="ticks">{Array.from({ length: 36 }, (_, i) => <i style={`--r:${i * 10}deg`}></i>)}</div>
+          <div class="needle"><svg viewBox="0 0 40 120" aria-hidden="true"><path d="M20 4 32 60H8Z" fill="var(--teal)" /><path d="M20 116 8 60h24Z" fill="var(--line-strong)" /></svg><span class="kaaba" aria-hidden="true"></span></div>
+          <span class="hub"></span>
+        </div>
+        <p class="small muted dial-cap" data-heading></p>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import site from '../data/site.json';
+  import { prayerTimes, formatTime, PRAYERS, localDate } from '../lib/prayer';
+  import { hijriLabel, qiblaBearing, upcomingIslamicDates } from '../lib/islamic';
+
+  const { lat, lng, utcOffset, timezone } = site.location;
+  const cfg = { lat, lng, utcOffset, fajrAngle: site.prayer.fajrAngle, ishaAngle: site.prayer.ishaAngle, asrFactor: site.prayer.asrFactor };
+  const today = localDate(utcOffset);
+  let y = today.y, m = today.m;
+  const body = document.querySelector('[data-month-body]')!;
+  const title = document.querySelector('[data-month-title]')!;
+  const hijriEl = document.querySelector('[data-month-hijri]')!;
+
+  function render() {
+    const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    title.textContent = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(Date.UTC(y, m - 1, 15));
+    const h1 = hijriLabel(new Date(Date.UTC(y, m - 1, 1, 19)), timezone), h2 = hijriLabel(new Date(Date.UTC(y, m - 1, days, 19)), timezone);
+    hijriEl.textContent = `${h1.text.replace(/ \d+ AH$/, '')}–${h2.text}`;
+    let html = '';
+    for (let d = 1; d <= days; d++) {
+      const t = prayerTimes({ y, m, d }, cfg);
+      const isToday = y === today.y && m === today.m && d === today.d;
+      const dt = new Date(Date.UTC(y, m - 1, d, 19));
+      const wd = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: 'UTC' }).format(dt);
+      const hj = hijriLabel(dt, timezone);
+      html += `<tr class="${isToday ? 'today' : ''} ${wd === 'Fri' ? 'fri' : ''}"><th scope="row"><span class="dd">${d}</span><span class="wd">${wd}</span><span class="hd">${hj.day} ${hj.text.split(' ')[1]}</span></th>${PRAYERS.map((p) => `<td>${formatTime(t[p.key], timezone).replace(' AM', '').replace(' PM', '')}</td>`).join('')}</tr>`;
+    }
+    body.innerHTML = html;
+    const row = body.querySelector<HTMLElement>('.today');
+    const wrap = document.querySelector<HTMLElement>('.table-wrap')!;
+    wrap.scrollTop = row ? row.offsetTop - 120 : 0;
+  }
+  document.querySelectorAll<HTMLButtonElement>('[data-m]').forEach((b) => b.addEventListener('click', () => {
+    m += Number(b.dataset.m); if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; } render();
+  }));
+  document.querySelector('[data-print]')?.addEventListener('click', () => window.print());
+  render();
+
+  const fmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  document.querySelector('[data-islamic-dates]')!.innerHTML = upcomingIslamicDates(new Date(), 4)
+    .map((e) => `<li><span class="d-when">${e.days === 0 ? 'Today' : `in ${e.days} day${e.days === 1 ? '' : 's'}`}</span><strong>${e.name}</strong><span class="small muted">${fmt.format(e.date)}</span></li>`).join('');
+
+  // Qibla compass
+  const dial = document.querySelector<HTMLElement>('[data-dial]')!;
+  const status = document.querySelector('[data-compass-status]')!;
+  const headingEl = document.querySelector('[data-heading]')!;
+  const bearing = qiblaBearing(lat, lng);
+  document.querySelector('[data-compass]')?.addEventListener('click', async () => {
+    const DOE = (window as any).DeviceOrientationEvent;
+    if (!DOE) { status.textContent = 'Your device does not provide a compass. Use the bearing above with a physical compass.'; return; }
+    try { if (typeof DOE.requestPermission === 'function' && (await DOE.requestPermission()) !== 'granted') { status.textContent = 'Compass permission was declined.'; return; } } catch {}
+    const onOrient = (e: any) => {
+      const heading = typeof e.webkitCompassHeading === 'number' ? e.webkitCompassHeading : e.absolute && e.alpha != null ? 360 - e.alpha : null;
+      if (heading == null) return;
+      dial.style.setProperty('--h', `${-heading}deg`);
+      const diff = ((bearing - heading + 540) % 360) - 180;
+      dial.classList.toggle('aligned', Math.abs(diff) < 4);
+      headingEl.textContent = Math.abs(diff) < 4 ? 'You are facing the qibla' : `Turn ${diff > 0 ? 'right' : 'left'} ${Math.abs(Math.round(diff))}°`;
+    };
+    addEventListener('deviceorientationabsolute' in window ? 'deviceorientationabsolute' : 'deviceorientation', onOrient as any);
+    status.textContent = 'Compass on. Hold your phone flat, away from metal.';
+  });
+</script>
+
+<style>
+  .method { display: flex; gap: 6px; align-items: flex-start; margin-top: 12px; }
+  .method :global(svg) { flex: none; margin-top: 2px; }
+  .month { padding: 0; overflow: hidden; }
+  .month-head { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-bottom: 1px solid var(--line); }
+  .month-title { text-align: center; }
+  .month-title h2 { font-size: 22px; }
+  .table-wrap { position: relative; max-height: 560px; overflow: auto; -webkit-overflow-scrolling: touch; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 15px; }
+  thead th { position: sticky; top: 0; background: var(--surface); z-index: 1; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; padding: 12px 8px; text-align: center; border-bottom: 1px solid var(--line); }
+  thead th:first-child { text-align: left; padding-left: 16px; }
+  tbody :global(th) { text-align: left; padding: 10px 8px 10px 16px; font-weight: 500; white-space: nowrap; display: flex; align-items: baseline; gap: 6px; }
+  tbody :global(.dd) { font-weight: 700; width: 20px; }
+  tbody :global(.wd) { color: var(--muted); font-size: 13px; width: 30px; }
+  tbody :global(.hd) { color: var(--teal); font-size: 12px; }
+  tbody :global(td) { text-align: center; padding: 10px 6px; }
+  tbody :global(tr) { border-bottom: 1px solid var(--line); }
+  tbody :global(tr.fri) { background: color-mix(in srgb, var(--clay-soft) 50%, transparent); }
+  tbody :global(tr.today) { background: var(--teal-soft); font-weight: 700; }
+  @media (max-width: 600px) { table { font-size: 13px; } tbody :global(.hd) { display: none; } tbody :global(td) { padding: 9px 2px; } thead th { padding: 10px 2px; font-size: 9.5px; letter-spacing: 0.02em; } tbody :global(th) { padding-left: 10px; gap: 4px; } thead th:first-child { padding-left: 10px; } }
+  @media (max-width: 420px) { tbody :global(.wd) { width: 24px; font-size: 11px; } table { font-size: 12.5px; } }
+  .month-foot { padding: 12px 16px; border-top: 1px solid var(--line); }
+
+  .dates h2 { font-size: 22px; margin-bottom: 4px; }
+  .date-list { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+  .date-list :global(li) { display: grid; gap: 2px; padding: 14px; border-radius: 14px; background: var(--surface-2); }
+  .date-list :global(.d-when) { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--clay); }
+  .qibla { display: grid; gap: 28px; align-items: center; }
+  @media (min-width: 860px) { .qibla { grid-template-columns: 1.2fr 1fr; padding: 40px; } }
+  .q-text h2 { margin: 10px 0 14px; font-size: clamp(28px, 4vw, 40px); }
+  .q-text .btn-row { margin: 20px 0 10px; }
+  .dial-wrap { display: grid; justify-items: center; gap: 12px; }
+  .dial { position: relative; width: min(300px, 78vw); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, var(--surface) 55%, var(--surface-2)); border: 1px solid var(--line-strong); box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.06), var(--shadow); transform: rotate(var(--h)); transition: transform 0.2s linear; }
+  .dial > span:not(.hub) { position: absolute; font-size: 13px; font-weight: 700; color: var(--muted); }
+  .dial .n { top: 10px; left: 50%; transform: translateX(-50%); color: var(--clay); }
+  .dial .s { bottom: 10px; left: 50%; transform: translateX(-50%); }
+  .dial .e { right: 12px; top: 50%; transform: translateY(-50%); }
+  .dial .w { left: 12px; top: 50%; transform: translateY(-50%); }
+  .ticks i { position: absolute; left: 50%; top: 4px; width: 1px; height: 8px; background: var(--line-strong); transform-origin: 50% calc(min(150px, 39vw) - 4px); transform: translateX(-50%) rotate(var(--r)); }
+  .needle { position: absolute; inset: 14%; transform: rotate(var(--q)); display: grid; justify-items: center; }
+  .needle svg { width: 26%; height: 100%; }
+  .kaaba { position: absolute; top: -6%; width: 22px; height: 22px; border-radius: 4px; background: #1c1915; box-shadow: inset 0 5px 0 -2px var(--gold); }
+  .hub { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; border-radius: 50%; background: var(--ink); transform: translate(-50%, -50%); border: 3px solid var(--surface); }
+  .dial.aligned { box-shadow: 0 0 0 6px color-mix(in srgb, var(--teal) 30%, transparent), var(--shadow); }
+  .dial-cap { min-height: 1.4em; font-weight: 600; }
+
+  @media print {
+    :global(.site-header), :global(.tabbar), :global(.site-footer), .page-hero, .qibla, .dates, :global(.prayer-today), .method, .month-head button, .month-foot { display: none !important; }
+    .table-wrap { max-height: none; overflow: visible; }
+    .month { border: 0; box-shadow: none; }
+  }
+</style>

@@ -1,0 +1,22 @@
+{
+  "name": "imams-corner",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Imam's Corner \u2014 Islamic Center of Tucson",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "samples": "node scripts/make-sample-pdfs.mjs",
+    "predev": "node scripts/copy-pdfjs.mjs",
+    "prebuild": "node scripts/copy-pdfjs.mjs"
+  },
+  "dependencies": {
+    "astro": "^7.4.0",
+    "pdfjs-dist": "^6.4.299"
+  },
+  "devDependencies": {
+    "pdf-lib": "^1.17.1"
+  }
+}

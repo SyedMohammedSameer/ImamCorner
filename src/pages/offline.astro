@@ -1,0 +1,31 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+---
+<Base title="Offline">
+  <section class="wrap wrap-narrow page-hero">
+    <p class="eyebrow">You're offline</p>
+    <h1>No signal. <span class="serif">No problem.</span></h1>
+    <p class="lead">This page isn't saved yet. Prayer times and saved documents still work.</p>
+    <div class="btn-row"><a href="/prayer-times" class="btn btn-primary"><Icon name="sunrise" />Prayer times</a></div>
+    <h2 class="saved-h">Saved documents</h2>
+    <ul class="saved" data-saved><li class="muted small">Nothing saved yet. Open a document and tap “Save offline”.</li></ul>
+  </section>
+</Base>
+<script>
+  (async () => {
+    if (!('caches' in window)) return;
+    const keys = await (await caches.open('ic-library-v1')).keys();
+    if (!keys.length) return;
+    document.querySelector('[data-saved]')!.innerHTML = keys.map((r) => {
+      const p = new URL(r.url).pathname; const name = decodeURIComponent(p.split('/').pop()!.replace(/\.pdf$/, '').replace(/-/g, ' '));
+      return `<li><a href="${p}">${name}</a></li>`;
+    }).join('');
+  })();
+</script>
+<style>
+  .btn-row { margin-top: 24px; }
+  .saved-h { font-size: 24px; margin-top: 48px; }
+  .saved { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 8px; }
+  .saved :global(a) { display: block; padding: 14px 16px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); text-transform: capitalize; font-weight: 600; }
+</style>

@@ -1,0 +1,87 @@
+---
+import Base from '../../layouts/Base.astro';
+import ResourceCard from '../../components/ResourceCard.astro';
+import Icon from '../../components/Icon.astro';
+import { getCollection } from 'astro:content';
+
+const imams = await getCollection('imams');
+const imamName = (id?: string) => (id ? imams.find((i) => i.id === id)?.data.shortName : undefined);
+const items = (await getCollection('resources', (r) => !r.data.draft)).sort((a, b) => +b.data.date - +a.data.date);
+const count = (t: string) => items.filter((i) => i.data.type === t).length;
+const filters = [
+  { key: 'all', label: 'Everything', n: items.length },
+  { key: 'khutbah', label: 'Khutbahs', n: count('khutbah') },
+  { key: 'book', label: 'Books', n: count('book') },
+  { key: 'notes', label: 'Class notes', n: count('notes') },
+  { key: 'guide', label: 'Guides', n: count('guide') },
+];
+---
+<Base title="Library" description="Khutbah notes, books and class handouts from the Imams of the Islamic Center of Tucson.">
+  <section class="wrap page-hero">
+    <p class="eyebrow">Library</p>
+    <h1>Read, search <span class="serif">&amp; share.</span></h1>
+    <p class="lead">Khutbahs, books and handouts open right here. Save any of them to read offline.</p>
+  </section>
+
+  <section class="wrap">
+    <div class="lib-tools">
+      <label class="lib-search">
+        <Icon name="search" size={18} />
+        <span class="sr-only">Search the library</span>
+        <input type="search" placeholder="Search titles, topics, authors…" data-lib-search enterkeyhint="search" />
+      </label>
+      <div class="segmented" role="group" aria-label="Filter by type" data-lib-filter>
+        {filters.filter((f) => f.key === 'all' || f.n > 0).map((f, i) => <button type="button" data-f={f.key} aria-pressed={i === 0 ? 'true' : 'false'}>{f.label} <span class="n">{f.n}</span></button>)}
+      </div>
+    </div>
+
+    <div class="grid grid-3 lib-grid" data-lib-grid>
+      {items.map((r) => <ResourceCard entry={r} khateebName={imamName(r.data.khateeb?.id)} />)}
+    </div>
+    <div class="card card-tint lib-empty" data-lib-empty hidden>
+      <Icon name="search" size={28} />
+      <p><strong>Nothing matches that search.</strong></p>
+      <p class="small muted">Try another word, or <a href="/ask" class="link-arrow">ask the Imam</a> for a recommendation.</p>
+    </div>
+
+  </section>
+</Base>
+
+<script>
+  const input = document.querySelector<HTMLInputElement>('[data-lib-search]')!;
+  const buttons = document.querySelectorAll<HTMLButtonElement>('[data-lib-filter] button');
+  const cards = document.querySelectorAll<HTMLElement>('[data-lib-grid] > a');
+  const empty = document.querySelector<HTMLElement>('[data-lib-empty]')!;
+  let type = new URLSearchParams(location.search).get('type') || 'all';
+
+  function apply() {
+    const q = input.value.trim().toLowerCase();
+    let n = 0;
+    cards.forEach((c) => {
+      const ok = (type === 'all' || c.dataset.type === type) && (!q || q.split(/\s+/).every((w) => c.dataset.search!.includes(w)));
+      c.hidden = !ok; if (ok) n++;
+    });
+    empty.hidden = n > 0;
+    buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.f === type)));
+  }
+  buttons.forEach((b) => b.addEventListener('click', () => {
+    type = b.dataset.f!;
+    const u = new URL(location.href); type === 'all' ? u.searchParams.delete('type') : u.searchParams.set('type', type);
+    history.replaceState(null, '', u);
+    apply();
+  }));
+  input.addEventListener('input', apply);
+  apply();
+</script>
+
+<style>
+  .lib-tools { display: grid; gap: 14px; margin-bottom: 28px; position: sticky; top: calc(var(--nav-h) + env(safe-area-inset-top)); z-index: 5; padding: 12px 0; background: linear-gradient(var(--bg) 75%, transparent); }
+  @media (min-width: 900px) { .lib-tools { grid-template-columns: minmax(280px, 380px) 1fr; align-items: center; } }
+  .lib-search { display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 16px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line-strong); color: var(--muted); transition: box-shadow 0.2s, border-color 0.2s; }
+  .lib-search:focus-within { border-color: var(--teal); box-shadow: 0 0 0 4px color-mix(in srgb, var(--teal) 16%, transparent); }
+  .lib-search input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 16px; color: var(--ink); }
+  .segmented .n { opacity: 0.55; font-weight: 500; margin-left: 2px; }
+  .lib-empty { display: grid; justify-items: center; text-align: center; gap: 6px; padding: 48px 20px; color: var(--muted); }
+  .offline-note { display: flex; gap: 16px; align-items: flex-start; margin-top: 40px; }
+  .offline-note h3 { margin-bottom: 4px; }
+</style>

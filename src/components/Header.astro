@@ -1,0 +1,57 @@
+---
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import { NAV, DESKTOP } from '../data/nav';
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const active = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
+---
+<header class="site-header" data-header>
+  <div class="wrap bar">
+    <a href="/" class="brand" aria-label="Imam's Corner home">
+      <Logo size={32} />
+      <span class="brand-text"><strong>Imam's Corner</strong><span>Islamic Center of Tucson</span></span>
+    </a>
+    <nav class="desk-nav" aria-label="Primary">
+      {DESKTOP.map((h) => { const n = NAV.find((x) => x.href === h)!; return <a href={h} aria-current={active(h) ? 'page' : undefined}>{n.label}</a>; })}
+    </nav>
+    <div class="actions">
+      <button class="btn btn-ghost btn-icon theme-btn" type="button" data-theme-toggle aria-label="Toggle dark mode">
+        <Icon name="moon" class="i-moon" /><Icon name="sun" class="i-sun" />
+      </button>
+      <a href="/ask" class="btn btn-primary btn-sm ask-btn">Ask the Imam</a>
+      <button class="btn btn-ghost btn-icon menu-btn" type="button" data-menu-open aria-label="Open menu"><Icon name="menu" /></button>
+    </div>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    position: sticky; top: 0; z-index: 50; height: var(--nav-h);
+    padding-top: env(safe-area-inset-top);
+    background: var(--glass); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid transparent; transition: border-color 0.3s, background 0.3s;
+    box-sizing: content-box;
+  }
+  .site-header.scrolled { border-bottom-color: var(--line); }
+  .bar { height: 100%; display: flex; align-items: center; gap: 20px; }
+  .brand { display: flex; align-items: center; gap: 10px; margin-right: auto; min-width: 0; }
+  .brand-text { display: grid; line-height: 1.1; }
+  .brand-text strong { font-size: 16px; letter-spacing: -0.02em; }
+  .brand-text span { font-size: 11.5px; color: var(--muted); font-weight: 500; letter-spacing: 0; }
+  .desk-nav { display: none; gap: 2px; }
+  .desk-nav a { padding: 8px 12px; border-radius: 999px; font-size: 14.5px; font-weight: 500; color: var(--ink-2); transition: background 0.2s, color 0.2s; }
+  .desk-nav a:hover { background: var(--line); color: var(--ink); }
+  .desk-nav a[aria-current='page'] { color: var(--ink); background: var(--line); }
+  .actions { display: flex; align-items: center; gap: 4px; }
+  .ask-btn { display: none; }
+  .theme-btn :global(.i-sun) { display: none; }
+  :global(:root[data-theme='dark']) .theme-btn :global(.i-sun) { display: block; }
+  :global(:root[data-theme='dark']) .theme-btn :global(.i-moon) { display: none; }
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme='light'])) .theme-btn :global(.i-sun) { display: block; }
+    :global(:root:not([data-theme='light'])) .theme-btn :global(.i-moon) { display: none; }
+  }
+  @media (min-width: 640px) { .ask-btn { display: inline-flex; margin-left: 6px; } }
+  @media (min-width: 1080px) { .desk-nav { display: flex; } .menu-btn { display: none; } }
+  @media (max-width: 899px) { .menu-btn { display: none; } }
+</style>

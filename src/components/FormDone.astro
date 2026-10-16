@@ -1,0 +1,16 @@
+---
+import Icon from './Icon.astro';
+interface Props { name: string; title?: string }
+const { name, title = 'Jazakum Allahu khayran. Received.' } = Astro.props;
+---
+<div class="form-done card" data-form-done={name} hidden>
+  <span class="done-icon"><Icon name="check" size={28} /></span>
+  <h3>{title}</h3>
+  <p class="muted"><slot>The Imam's office will be in touch, insha'Allah.</slot></p>
+  <a href="/" class="btn btn-sm">Back to home</a>
+</div>
+<style>
+  .form-done { display: grid; justify-items: center; text-align: center; gap: 10px; padding: 48px 24px; }
+  .done-icon { width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center; background: var(--saguaro-soft); color: var(--saguaro); animation: pop-in 0.5s var(--ease); }
+  @keyframes pop-in { from { transform: scale(0.5); opacity: 0; } }
+</style>

@@ -1,0 +1,10 @@
+{
+  "rotation": {
+    "note": "Default rotation, carried over from the previous schedule: Sh. Amir Koshin gives every 4th khutbah; Sh. Burhan Hamdan gives the rest. Add an override below to change a specific Friday.",
+    "anchorDate": "2023-12-15",
+    "everyNthWeek": 4,
+    "rotatingKhateeb": "amir-koshin",
+    "defaultKhateeb": "burhan-hamdan"
+  },
+  "overrides": []
+}

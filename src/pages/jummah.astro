@@ -1,0 +1,123 @@
+---
+import Base from '../layouts/Base.astro';
+import ResourceCard from '../components/ResourceCard.astro';
+import Icon from '../components/Icon.astro';
+import { getCollection } from 'astro:content';
+import site from '../data/site.json';
+import { khutbahSchedule, fmtDate } from '../lib/jummah';
+
+const imams = (await getCollection('imams')).sort((a, b) => a.data.order - b.data.order);
+const imam = (id: string) => imams.find((i) => i.id === id);
+const list = khutbahSchedule(new Date(Date.now() - 7 * 86400_000), 40);
+const archive = (await getCollection('resources', (r) => r.data.type === 'khutbah' && !r.data.draft)).sort((a, b) => +b.data.date - +a.data.date);
+const feed = new URL('/jummah.ics', Astro.site);
+const sunnahs = [
+  ['Ghusl', 'Bathe before the prayer.'],
+  ['Your best', 'Wear clean, good clothes.'],
+  ['Come early', 'Earlier means greater reward.'],
+  ["Al-Kahf", "Recite Surah al-Kahf."],
+  ['Salawat', 'Send blessings on the Prophet ﷺ.'],
+  ["Du'a", 'Seek the hour of answered du’a.'],
+  ['Listen', 'Stay silent during the khutbah.'],
+  ['Phones off', 'Silence your phone.'],
+];
+---
+<Base title="Jummah" description="Friday khutbah schedule, khateeb rotation and khutbah notes archive at the Islamic Center of Tucson.">
+  <section class="wrap page-hero">
+    <p class="eyebrow">Jumu'ah</p>
+    <h1>Every Friday, <span class="serif">12:25 PM.</span></h1>
+    <p class="lead">{site.jummah.label}.</p>
+    <div class="btn-row hero-ctas">
+      <a href={feed.href.replace(/^https?:/, 'webcal:')} class="btn btn-primary"><Icon name="calendar-plus" />Subscribe to the schedule</a>
+      <a href={site.mapsUrl} class="btn" target="_blank" rel="noopener"><Icon name="pin" />Directions</a>
+    </div>
+    <p class="tiny muted ics-alt">Or <a href="/jummah.ics" download>download the .ics file</a> for Google, Apple or Outlook Calendar.</p>
+  </section>
+
+  <section class="wrap">
+    <div class="jm-grid">
+      <div class="card next-card" data-upcoming data-limit="1">
+        {list.map((k, i) => { const im = imam(k.khateeb); return (
+          <div class="next" data-date={k.date} hidden={i !== 1}>
+            <span class="chip chip-clay">This Friday</span>
+            <p class="next-date">{fmtDate(k.date, { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+            <div class="next-who">
+              <div class="avatar arch" aria-hidden="true">{im?.data.name.split(' ').slice(1).map((w) => w[0]).join('')}</div>
+              <div><p class="small muted">Khateeb</p><p class="next-name">{im?.data.name ?? 'To be announced'}</p>{k.topic && <p class="small">“{k.topic}”</p>}</div>
+            </div>
+            {k.note && <p class="small note">{k.note}</p>}
+          </div>
+        ); })}
+      </div>
+
+      <div class="card sched">
+        <div class="sched-head"><h2>Upcoming khutbahs</h2><span class="small muted">Next 12 weeks</span></div>
+        <ol class="sched-list" data-upcoming data-limit="12">
+          {list.map((k, i) => (
+            <li data-date={k.date} hidden={i < 1 || i > 12}>
+              <time datetime={k.date}><span>{fmtDate(k.date, { month: 'short' })}</span><strong>{fmtDate(k.date, { day: 'numeric' })}</strong></time>
+              <div class="who"><strong>{imam(k.khateeb)?.data.shortName ?? 'TBA'}</strong>{k.topic && <span class="small muted">{k.topic}</span>}</div>
+              {k.khateeb !== 'burhan-hamdan' && <span class="chip chip-teal">Rotation</span>}
+            </li>
+          ))}
+        </ol>
+        <p class="tiny muted rot-note">Follows the regular rotation and may change.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="section-head reveal">
+      <div><p class="eyebrow">Khutbah archive</p><h2>Missed a Friday? <span class="serif">Read it here.</span></h2></div>
+      <a href="/library?type=khutbah" class="link-arrow">All khutbahs<Icon name="arrow-right" /></a>
+    </div>
+    {archive.length ? (
+      <div class="grid grid-3">{archive.slice(0, 6).map((r) => <div class="reveal"><ResourceCard entry={r} khateebName={r.data.khateeb ? imam(r.data.khateeb.id)?.data.shortName : undefined} /></div>)}</div>
+    ) : <p class="muted">Khutbah notes will appear here soon, insha'Allah.</p>}
+  </section>
+
+  <section class="wrap">
+    <div class="sunnah pattern reveal">
+      <div class="section-head"><div><p class="eyebrow">Sunnahs of Friday</p><h2>Make the most of the best day.</h2></div></div>
+      <ol class="sunnah-grid">
+        {sunnahs.map(([t, d], i) => <li><span class="num">{String(i + 1).padStart(2, '0')}</span><strong>{t}</strong><span class="small muted">{d}</span></li>)}
+      </ol>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { applyUpcoming } from '../lib/upcoming';
+  applyUpcoming();
+</script>
+
+<style>
+  .hero-ctas { margin-top: 26px; }
+  .ics-alt { margin-top: 12px; }
+  .ics-alt a { text-decoration: underline; }
+  .jm-grid { display: grid; gap: 16px; }
+  @media (min-width: 960px) { .jm-grid { grid-template-columns: 1fr 1.3fr; align-items: start; } .next-card { position: sticky; top: calc(var(--nav-h) + 20px); } }
+  .next-card { background: linear-gradient(160deg, var(--surface), var(--surface-2)); border-radius: var(--radius-l); }
+  .next { display: grid; gap: 14px; }
+  .next-date { font-size: clamp(28px, 4vw, 40px); font-weight: 700; letter-spacing: -0.04em; line-height: 1.05; }
+  .next-who { display: flex; gap: 16px; align-items: center; padding: 14px; border-radius: 16px; background: var(--bg); }
+  .next-name { font-size: 22px; font-weight: 700; letter-spacing: -0.03em; }
+  .avatar { width: 64px; height: 80px; flex: none; display: grid; place-items: center; background: linear-gradient(160deg, var(--teal), var(--clay)); color: #fff; font-weight: 700; font-size: 22px; }
+  .note { padding: 10px 12px; border-radius: 10px; background: var(--gold-soft); }
+  .sched-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .sched-head h2 { font-size: 24px; }
+  .sched-list { list-style: none; margin: 0; padding: 0; }
+  .sched-list li { display: flex; align-items: center; gap: 16px; padding: 12px 4px; border-top: 1px solid var(--line); }
+  .sched-list li:first-child { border-top: 0; }
+  .sched-list time { width: 48px; flex: none; display: grid; text-align: center; line-height: 1.1; }
+  .sched-list time span { font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--clay); letter-spacing: 0.05em; }
+  .sched-list time strong { font-size: 22px; letter-spacing: -0.03em; }
+  .who { flex: 1; display: grid; }
+  .sched-list li.is-next { background: var(--teal-soft); border-radius: 12px; border-color: transparent; }
+  .sched-list li.is-next + li { border-top-color: transparent; }
+  .rot-note { margin-top: 12px; }
+  .sunnah { padding: clamp(28px, 5vw, 56px); border-radius: var(--radius-l); background: var(--surface); border: 1px solid var(--line); overflow: hidden; }
+  .sunnah-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+  .sunnah-grid li { display: grid; gap: 4px; padding: 18px; border-radius: 16px; background: color-mix(in srgb, var(--surface-2) 80%, transparent); border: 1px solid var(--line); backdrop-filter: blur(4px); }
+  .num { font-family: var(--font-serif); font-size: 26px; color: var(--clay); line-height: 1; }
+</style>

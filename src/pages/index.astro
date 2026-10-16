@@ -1,0 +1,242 @@
+---
+import Base from '../layouts/Base.astro';
+import HeroArt from '../components/HeroArt.astro';
+import PrayerToday from '../components/PrayerToday.astro';
+import ResourceCard from '../components/ResourceCard.astro';
+import Icon from '../components/Icon.astro';
+import { getCollection } from 'astro:content';
+import site from '../data/site.json';
+import classes from '../data/classes.json';
+import reminders from '../data/reminders.json';
+import { khutbahSchedule, fmtDate } from '../lib/jummah';
+
+const imams = (await getCollection('imams')).sort((a, b) => a.data.order - b.data.order);
+const imamName = (id: string) => imams.find((i) => i.id === id)?.data.shortName ?? id;
+const resources = (await getCollection('resources', (r) => !r.data.draft)).sort((a, b) => +b.data.date - +a.data.date);
+const latest = resources.slice(0, 3);
+const now = new Date();
+const announcements = (await getCollection('announcements')).filter((a) => !a.data.expires || a.data.expires > now).sort((a, b) => +b.data.date - +a.data.date);
+const fridays = khutbahSchedule(new Date(now.getTime() - 7 * 86400_000), 10);
+
+const services = [
+  { href: '/ask', icon: 'message', tone: '', title: 'Ask the Imam', text: 'Send a question, anonymously if you like.' },
+  { href: '/office-hours', icon: 'calendar', tone: 'gold', title: 'Office hours', text: 'Book a private meeting with Sh. Burhan.' },
+  { href: '/services#nikah', icon: 'rings', tone: 'clay', title: 'Nikah', text: 'Pre-marital meetings and officiating.' },
+  { href: '/services#janazah', icon: 'leaf', tone: 'green', title: 'Janazah', text: 'Funeral guidance and support for the family.' },
+  { href: '/services#counseling', icon: 'heart', tone: 'clay', title: 'Counseling', text: 'Confidential, faith-centered support.' },
+  { href: '/new-muslims', icon: 'sparkles', tone: 'gold', title: 'New to Islam', text: 'Shahadah and first steps.' },
+];
+const kindTone: Record<string, string> = { reminder: 'chip-teal', class: 'chip-clay', youth: 'chip-gold', quran: 'chip-green' };
+const kindLabel: Record<string, string> = { reminder: 'Reminder', class: 'Class', youth: 'Youth', quran: 'Qur’an' };
+---
+<Base>
+  <!-- HERO -->
+  <section class="hero">
+    <HeroArt />
+    <div class="wrap hero-inner">
+      <p class="eyebrow">Islamic Center of Tucson</p>
+      <p class="bismillah arabic" lang="ar">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</p>
+      <h1>Faith, knowledge &amp; care <span class="serif">under the Sonoran sky.</span></h1>
+      <p class="lead">Khutbahs, classes, books and counsel from the Imams of the Islamic Center of Tucson.</p>
+      <div class="btn-row">
+        <a href="/jummah" class="btn btn-primary"><Icon name="mic" />This week's khutbah</a>
+        <a href="/office-hours" class="btn"><Icon name="calendar" />Book office hours</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- TODAY -->
+  <section class="wrap today">
+    <div class="today-grid">
+      <PrayerToday />
+      <div class="friday card" data-upcoming data-limit="1">
+        <div class="friday-top">
+          <span class="chip chip-clay"><Icon name="mic" size={14} />Jumu'ah</span>
+          <a href="/jummah.ics" class="btn btn-ghost btn-sm" title="Subscribe in your calendar"><Icon name="calendar-plus" />Add</a>
+        </div>
+        {fridays.map((f, i) => (
+          <div class="friday-body" data-date={f.date} hidden={i !== 1}>
+            <p class="small muted">This Friday · {fmtDate(f.date, { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+            <p class="fri-name">{imamName(f.khateeb)}</p>
+            {f.topic && <p class="small">“{f.topic}”</p>}
+          </div>
+        ))}
+        <p class="fri-time"><Icon name="clock" size={16} />{site.jummah.label}</p>
+        <a href="/jummah" class="link-arrow">Full schedule<Icon name="arrow-right" /></a>
+      </div>
+    </div>
+  </section>
+
+  {announcements.length > 0 && (
+    <section class="wrap section-tight ann-wrap">
+      {announcements.map((a) => (
+        <div class="announcement reveal">
+          <span class="icon-tile gold"><Icon name="bell" /></span>
+          <div><strong>{a.data.title}</strong><p class="small muted">{a.body?.trim()}</p></div>
+          {a.data.link && <a href={a.data.link} class="btn btn-sm">{a.data.linkLabel ?? 'Learn more'}</a>}
+        </div>
+      ))}
+    </section>
+  )}
+
+  <!-- TONIGHT -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div>
+          <p class="eyebrow">Today at ICT</p>
+          <h2>What's on this <span data-day-label>week</span></h2>
+          <p class="lead">Everyone is welcome.</p>
+        </div>
+        <a href="/classes" class="link-arrow">Weekly timetable<Icon name="arrow-right" /></a>
+      </div>
+      <div class="grid grid-3 tonight" data-today-list>
+        {classes.programs.map((p) => (
+          <article class="card program reveal" data-days={p.days.join(' ')}>
+            <div class="program-top"><span class={`chip ${kindTone[p.kind]}`}>{kindLabel[p.kind]}</span><span class="small muted program-time"><Icon name="clock" size={14} />{p.time}</span></div>
+            <h3>{p.title}</h3>
+            {p.arabic && <p class="arabic program-ar" lang="ar">{p.arabic}</p>}
+            <p class="small muted">{imamName(p.presenter)} · {p.audience}</p>
+          </article>
+        ))}
+        <div class="card card-tint empty" data-empty hidden>
+          <p><strong>No scheduled programs today.</strong></p>
+          <p class="small muted">Join us for the five daily prayers, or browse the library.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AYAH -->
+  <section class="wrap">
+    <figure class="ayah pattern reveal" data-ayah>
+      {reminders.ayat.map((a, i) => (
+        <div class="ayah-item" data-i={i} hidden={i !== 0}>
+          <p class="arabic ayah-ar" lang="ar">{a.ar}</p>
+          <blockquote>“{a.en}”</blockquote>
+          <figcaption>Qur'an · {a.ref}</figcaption>
+        </div>
+      ))}
+      <span class="ayah-label"><Icon name="star8" size={14} /> Reminder of the day</span>
+    </figure>
+  </section>
+
+  <!-- LIBRARY -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div>
+          <p class="eyebrow">Library</p>
+          <h2>Read the khutbah again. <span class="serif">Anywhere.</span></h2>
+          <p class="lead">Khutbah notes, books and handouts in a built-in reader.</p>
+        </div>
+        <a href="/library" class="link-arrow">Open the library<Icon name="arrow-right" /></a>
+      </div>
+      <div class="grid grid-3">
+        {latest.map((r) => <div class="reveal"><ResourceCard entry={r} khateebName={r.data.khateeb ? imamName(r.data.khateeb.id) : undefined} /></div>)}
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section class="section services-band">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div>
+          <p class="eyebrow">The Imam's office</p>
+          <h2>Here for the moments that matter.</h2>
+        </div>
+      </div>
+      <div class="grid grid-3">
+        {services.map((s) => (
+          <a href={s.href} class="card svc reveal">
+            <span class={`icon-tile ${s.tone}`}><Icon name={s.icon} /></span>
+            <h3>{s.title}</h3>
+            <p class="small muted">{s.text}</p>
+            <span class="svc-arrow"><Icon name="arrow-right" /></span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- IMAMS -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div><p class="eyebrow">Our Imams</p><h2>Meet the people <span class="serif">behind the minbar.</span></h2></div>
+        <a href="/imams" class="link-arrow">About the Imams<Icon name="arrow-right" /></a>
+      </div>
+      <div class="grid grid-2">
+        {imams.map((im) => (
+          <a href={`/imams#${im.id}`} class="card imam reveal">
+            <div class="avatar arch" aria-hidden="true"><span>{im.data.name.split(' ').slice(1).map((w) => w[0]).join('')}</span></div>
+            <div>
+              <p class="small muted">{im.data.role}</p>
+              <h3>{im.data.name}</h3>
+              <div class="chips">{im.data.focus.slice(0, 3).map((f) => <span class="chip">{f}</span>)}</div>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+</Base>
+
+<script>
+  import { applyUpcoming, applyToday } from '../lib/upcoming';
+  applyUpcoming();
+  applyToday();
+  const ayat = document.querySelectorAll<HTMLElement>('[data-ayah] .ayah-item');
+  const doy = Math.floor((Date.now() - Date.UTC(new Date().getUTCFullYear(), 0, 0)) / 86400_000);
+  ayat.forEach((el, i) => (el.hidden = i !== doy % ayat.length));
+</script>
+
+<style>
+  .hero { position: relative; isolation: isolate; overflow: hidden; min-height: clamp(560px, 86svh, 780px); display: flex; margin-top: calc(-1 * var(--nav-h) - env(safe-area-inset-top)); padding-top: calc(var(--nav-h) + env(safe-area-inset-top)); }
+  .hero-inner { padding-top: clamp(40px, 9vh, 110px); padding-bottom: 220px; }
+  .bismillah { font-size: clamp(24px, 3.4vw, 34px); color: var(--teal); margin: 14px 0 6px; text-align: left; line-height: 1.6; }
+  .hero h1 { max-width: 15ch; }
+  .hero h1 .serif { display: block; color: var(--clay); font-size: 1.02em; }
+  .hero .lead { margin-top: 20px; max-width: 540px; }
+  .hero .btn-row { margin-top: 28px; }
+  @media (max-width: 520px) { .hero .btn-row .btn { flex: 1; } .hero-inner { padding-bottom: 180px; } }
+
+  .today { position: relative; z-index: 2; margin-top: -110px; }
+  .today-grid { display: grid; gap: 16px; grid-template-columns: 1fr; }
+  @media (min-width: 900px) { .today-grid { grid-template-columns: 1.7fr 1fr; } }
+  .friday { display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow-l); border-radius: var(--radius-l); }
+  .friday-top { display: flex; justify-content: space-between; align-items: center; }
+  .fri-name { font-size: clamp(26px, 3vw, 32px); font-weight: 700; letter-spacing: -0.035em; line-height: 1.1; margin-top: 2px; }
+  .fri-time { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--ink-2); padding: 10px 12px; background: var(--surface-2); border-radius: 12px; margin-top: auto; }
+  .friday .link-arrow { margin-top: 2px; }
+
+  .ann-wrap { padding-bottom: 0; }
+  .announcement { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 16px 18px; border-radius: var(--radius); background: var(--gold-soft); border: 1px solid color-mix(in srgb, var(--gold) 25%, transparent); }
+  .announcement > div { flex: 1; min-width: 200px; }
+
+  .program { display: flex; flex-direction: column; gap: 8px; }
+  .program-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .program-time { display: inline-flex; gap: 5px; align-items: center; }
+  .program h3 { font-size: 19px; }
+  .program-ar { font-size: 18px; color: var(--teal); line-height: 1.4; text-align: left; }
+  .empty { display: grid; gap: 4px; }
+
+  .ayah { margin: 0; position: relative; text-align: center; padding: clamp(40px, 7vw, 80px) clamp(20px, 5vw, 64px); border-radius: var(--radius-l); background: var(--surface); border: 1px solid var(--line); overflow: hidden; }
+  .ayah-ar { font-size: clamp(30px, 5vw, 50px); color: var(--teal); direction: rtl; text-align: center; line-height: 1.7; }
+  .ayah blockquote { margin: 14px auto 0; max-width: 680px; font-family: var(--font-serif); font-size: clamp(22px, 3vw, 32px); line-height: 1.25; letter-spacing: -0.01em; }
+  .ayah figcaption { margin-top: 16px; font-size: 14px; color: var(--muted); font-weight: 600; }
+  .ayah-label { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); display: inline-flex; gap: 6px; align-items: center; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gold); white-space: nowrap; }
+
+  .services-band { background: linear-gradient(180deg, transparent, var(--bg-2) 18%, var(--bg-2) 82%, transparent); }
+  .svc { display: flex; flex-direction: column; gap: 10px; }
+  .svc h3 { margin-top: 6px; }
+  .svc-arrow { position: absolute; top: 24px; right: 24px; color: var(--muted); transition: transform 0.3s var(--ease), color 0.3s; }
+  .svc:hover .svc-arrow { transform: translateX(4px); color: var(--teal); }
+
+  .imam { display: flex; gap: 20px; align-items: center; }
+  .avatar { flex: none; width: 92px; height: 116px; display: grid; place-items: center; background: linear-gradient(160deg, var(--teal), #1f8f86 50%, var(--clay)); color: #fff; font-size: 30px; font-weight: 700; letter-spacing: -0.04em; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+
+</style>

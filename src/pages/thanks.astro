@@ -1,0 +1,17 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+---
+<Base title="Thank you">
+  <section class="wrap wrap-narrow page-hero center">
+    <span class="tick"><Icon name="check" size={34} /></span>
+    <h1>Jazakum Allahu <span class="serif">khayran.</span></h1>
+    <p class="lead">Your message reached the Imam's office. We'll be in touch soon, insha'Allah.</p>
+    <div class="btn-row"><a href="/" class="btn btn-primary">Back to home</a><a href="/library" class="btn">Browse the library</a></div>
+  </section>
+</Base>
+<style>
+  .center { text-align: center; display: grid; justify-items: center; }
+  .tick { width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; background: var(--saguaro-soft); color: var(--saguaro); }
+  .btn-row { justify-content: center; margin-top: 28px; }
+</style>

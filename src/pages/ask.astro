@@ -1,0 +1,81 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import FormDone from '../components/FormDone.astro';
+import site from '../data/site.json';
+const topics = ['Aqeedah (belief)', 'Salah & worship', 'Fasting & Ramadan', 'Zakah & finances', 'Marriage & family', 'Parenting & youth', 'Qur’an & tafsir', 'Book recommendation', 'Becoming Muslim', 'Something else'];
+const faqs = [
+  ['Is my question private?', 'Yes. Only the Imam’s office sees it. Leave your name and email blank to ask anonymously.'],
+  ['How will I get an answer?', 'By email, if you leave one.'],
+  ['Something urgent?', 'For a death in the family or other urgent matters, contact the masjid directly.'],
+];
+---
+<Base title="Ask the Imam" description="Send a private question to the Imam of the Islamic Center of Tucson.">
+  <section class="wrap page-hero">
+    <p class="eyebrow">Ask the Imam</p>
+    <h1>No question <span class="serif">is too small.</span></h1>
+    <p class="lead">Write to Sheikh Burhan Hamdan. Leave your name blank to ask anonymously.</p>
+  </section>
+
+  <section class="wrap">
+    <div class="ask-grid">
+      <div>
+        <form name="ask-the-imam" method="POST" action="/thanks" data-netlify="true" netlify-honeypot="bot-field" class="card form">
+          <input type="hidden" name="form-name" value="ask-the-imam" />
+          <p hidden><label>Don't fill this out: <input name="bot-field" /></label></p>
+          <div class="form-grid">
+            <div class="field full">
+              <label for="topic">Topic</label>
+              <select id="topic" name="topic" class="select">{topics.map((t) => <option>{t}</option>)}</select>
+            </div>
+            <div class="field full">
+              <label for="question">Your question</label>
+              <textarea id="question" name="question" class="textarea" required minlength="10" placeholder="Assalamu alaikum, Sheikh…"></textarea>
+            </div>
+            <div class="field"><label for="name">Name <span class="muted">(optional)</span></label><input id="name" name="name" class="input" autocomplete="name" /></div>
+            <div class="field"><label for="email">Email for a reply <span class="muted">(optional)</span></label><input id="email" name="email" type="email" class="input" autocomplete="email" inputmode="email" /></div>
+            <label class="check full"><input type="checkbox" name="may-share-anonymously" value="yes" /><span>The Imam may answer this publicly in a class or khutbah, without my name.</span></label>
+          </div>
+          <p class="form-err small" data-form-error hidden></p>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary"><Icon name="message" />Send question</button>
+            <span class="tiny muted"><Icon name="eye" size={13} /> Seen only by the Imam's office.</span>
+          </div>
+        </form>
+        <FormDone name="ask-the-imam" title="Your question has been sent.">If you left an email, the reply will come there, insha'Allah.</FormDone>
+      </div>
+
+      <aside class="faq">
+        <h2 class="h">Good to know</h2>
+        {faqs.map(([q, a], i) => (
+          <details open={i === 0}>
+            <summary>{q}<Icon name="chevron-down" size={18} /></summary>
+            <p class="small muted">{a}</p>
+          </details>
+        ))}
+        <div class="card card-tint alt">
+          <p class="small"><strong>Prefer to talk?</strong> Book time in <a href="/office-hours">office hours</a> or email <a href={`mailto:${site.email}`}>{site.email}</a>.</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .ask-grid { display: grid; gap: 28px; }
+  @media (min-width: 960px) { .ask-grid { grid-template-columns: 1.4fr 1fr; align-items: start; } }
+  .form { padding: clamp(20px, 4vw, 32px); }
+  .form-actions { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-top: 22px; }
+  .form-actions .tiny { display: inline-flex; gap: 5px; align-items: center; }
+  .form-err { color: var(--clay); margin-top: 12px; }
+  .h { font-size: 24px; margin-bottom: 10px; }
+  details { border-top: 1px solid var(--line); padding: 4px 0; }
+  details:first-of-type { border-top: 0; }
+  summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 14px 0; font-weight: 600; font-size: 16px; }
+  summary::-webkit-details-marker { display: none; }
+  summary :global(svg) { transition: transform 0.3s var(--ease); color: var(--muted); flex: none; }
+  details[open] summary :global(svg) { transform: rotate(180deg); }
+  details p { padding-bottom: 14px; }
+  .alt { margin-top: 18px; }
+  .alt a { color: var(--teal); text-decoration: underline; text-underline-offset: 2px; }
+</style>
