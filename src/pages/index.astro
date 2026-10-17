@@ -34,9 +34,8 @@ const kindLabel: Record<string, string> = { reminder: 'Reminder', class: 'Class'
   <section class="hero">
     <HeroArt />
     <div class="wrap hero-inner">
-      <p class="eyebrow">Islamic Center of Tucson</p>
       <p class="bismillah arabic" lang="ar">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</p>
-      <h1>Faith, knowledge &amp; care <span class="serif">under the Sonoran sky.</span></h1>
+      <h1>Islamic Center <span class="serif">of Tucson</span></h1>
       <p class="lead">Khutbahs, classes, books and counsel from the Imams of the Islamic Center of Tucson.</p>
       <div class="btn-row">
         <a href="/jummah" class="btn btn-primary"><Icon name="mic" />This week's khutbah</a>
@@ -197,7 +196,7 @@ const kindLabel: Record<string, string> = { reminder: 'Reminder', class: 'Class'
   .hero { position: relative; isolation: isolate; overflow: hidden; min-height: clamp(560px, 86svh, 780px); display: flex; margin-top: calc(-1 * var(--nav-h) - env(safe-area-inset-top)); padding-top: calc(var(--nav-h) + env(safe-area-inset-top)); }
   /* Keep the copy above the ridgeline: the landscape is min(max(26.39vw, 290px), 480px) tall and its peaks start ~30% down. */
   .hero-inner { padding-top: clamp(40px, 9vh, 110px); padding-bottom: calc(min(max(26.39vw, 290px), 480px) * 0.72 + 16px); }
-  .bismillah { font-size: clamp(24px, 3.4vw, 34px); color: var(--teal); margin: 14px 0 6px; text-align: left; line-height: 1.6; }
+  .bismillah { font-size: clamp(24px, 3.4vw, 34px); color: var(--teal); margin: 0 0 6px; text-align: left; line-height: 1.6; }
   .hero h1 { max-width: 15ch; }
   .hero h1 .serif { display: block; color: var(--clay); font-size: 1.02em; }
   .hero .lead { margin-top: 20px; max-width: 540px; }
