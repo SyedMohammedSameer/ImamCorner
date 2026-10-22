@@ -2,12 +2,12 @@
 import Base from '../../layouts/Base.astro';
 import ResourceCard from '../../components/ResourceCard.astro';
 import Icon from '../../components/Icon.astro';
-import { getCollection } from 'astro:content';
+import { getResources, imamName as nameOf } from '../../lib/data';
 
-const imams = await getCollection('imams');
-const imamName = (id?: string) => (id ? imams.find((i) => i.id === id)?.data.shortName : undefined);
-const items = (await getCollection('resources', (r) => !r.data.draft)).sort((a, b) => +b.data.date - +a.data.date);
-const count = (t: string) => items.filter((i) => i.data.type === t).length;
+const { imams } = Astro.locals;
+const imamName = (id: string | null) => nameOf(imams, id);
+const items = await getResources();
+const count = (t: string) => items.filter((i) => i.type === t).length;
 const filters = [
   { key: 'all', label: 'Everything', n: items.length },
   { key: 'khutbah', label: 'Khutbahs', n: count('khutbah') },
@@ -36,7 +36,7 @@ const filters = [
     </div>
 
     <div class="grid grid-3 lib-grid" data-lib-grid>
-      {items.map((r) => <ResourceCard entry={r} khateebName={imamName(r.data.khateeb?.id)} />)}
+      {items.map((r) => <ResourceCard r={r} khateebName={imamName(r.imam_id)} />)}
     </div>
     <div class="card card-tint lib-empty" data-lib-empty hidden>
       <Icon name="search" size={28} />

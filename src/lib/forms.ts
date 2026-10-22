@@ -1,7 +1,7 @@
-// Progressive enhancement for Netlify Forms: submit in place, show a success state.
-// Without JavaScript the form posts normally and Netlify redirects to /thanks.
+// Forms post to /api/submit, which saves them for the admin inbox. With JavaScript they submit in place;
+// without it the browser posts normally and is redirected to /thanks.
 export function initForms() {
-  document.querySelectorAll<HTMLFormElement>('form[data-netlify]').forEach((form) => {
+  document.querySelectorAll<HTMLFormElement>('form[data-form]').forEach((form) => {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = form.querySelector<HTMLButtonElement>('[type=submit]');
@@ -10,7 +10,7 @@ export function initForms() {
       err && (err.hidden = true);
       try {
         const body = new URLSearchParams(new FormData(form) as any).toString();
-        const res = await fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
+        const res = await fetch('/api/submit', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' }, body });
         if (!res.ok) throw new Error(String(res.status));
         const done = document.querySelector<HTMLElement>(`[data-form-done="${form.getAttribute('name')}"]`);
         form.hidden = true;

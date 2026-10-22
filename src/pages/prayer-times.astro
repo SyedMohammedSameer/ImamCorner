@@ -2,9 +2,11 @@
 import Base from '../layouts/Base.astro';
 import PrayerToday from '../components/PrayerToday.astro';
 import Icon from '../components/Icon.astro';
-import site from '../data/site.json';
 import { qiblaBearing, distanceToKaabaKm, compassPoint } from '../lib/islamic';
-const { lat, lng } = site.location;
+import { prayerConfig } from '../lib/data';
+const cfg = prayerConfig(Astro.locals.settings);
+const { lat, lng } = cfg;
+const method = cfg.fajrAngle === 15 && cfg.ishaAngle === 15 ? 'ISNA method' : `Fajr ${cfg.fajrAngle}°, Isha ${cfg.ishaAngle}°`;
 const bearing = qiblaBearing(lat, lng);
 const km = distanceToKaabaKm(lat, lng);
 ---
@@ -17,11 +19,11 @@ const km = distanceToKaabaKm(lat, lng);
 
   <section class="wrap">
     <PrayerToday variant="full" />
-    <p class="tiny muted method"><Icon name="lightbulb" size={14} />{site.prayer.note} Asr: standard (Shafiʿi, Maliki, Hanbali).</p>
+    <p class="tiny muted method"><Icon name="lightbulb" size={14} />Calculated adhan times ({method}). Please confirm iqama times at the masjid. Asr: {cfg.asrFactor === 2 ? 'Hanafi' : 'standard (Shafiʿi, Maliki, Hanbali)'}.</p>
   </section>
 
   <section class="wrap section-tight">
-    <div class="month card">
+    <div class="month card" data-month-cfg={JSON.stringify(cfg)}>
       <div class="month-head">
         <button class="btn btn-ghost btn-icon" data-m="-1" aria-label="Previous month"><Icon name="chevron-left" /></button>
         <div class="month-title"><h2 data-month-title>This month</h2><p class="small muted" data-month-hijri></p></div>
@@ -70,12 +72,11 @@ const km = distanceToKaabaKm(lat, lng);
 </Base>
 
 <script>
-  import site from '../data/site.json';
   import { prayerTimes, formatTime, PRAYERS, localDate } from '../lib/prayer';
   import { hijriLabel, qiblaBearing, upcomingIslamicDates } from '../lib/islamic';
 
-  const { lat, lng, utcOffset, timezone } = site.location;
-  const cfg = { lat, lng, utcOffset, fajrAngle: site.prayer.fajrAngle, ishaAngle: site.prayer.ishaAngle, asrFactor: site.prayer.asrFactor };
+  const cfg = JSON.parse(document.querySelector<HTMLElement>('[data-month-cfg]')!.dataset.monthCfg!);
+  const { lat, lng, utcOffset, timezone } = cfg;
   const today = localDate(utcOffset);
   let y = today.y, m = today.m;
   const body = document.querySelector('[data-month-body]')!;

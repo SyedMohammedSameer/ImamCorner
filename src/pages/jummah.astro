@@ -2,14 +2,11 @@
 import Base from '../layouts/Base.astro';
 import ResourceCard from '../components/ResourceCard.astro';
 import Icon from '../components/Icon.astro';
-import { getCollection } from 'astro:content';
-import site from '../data/site.json';
-import { khutbahSchedule, fmtDate } from '../lib/jummah';
+import { getSchedule, getResources, todayInTucson, addDays, fmtDate, fmtTime, jummahLabel, khateebLabel, initials, imamName } from '../lib/data';
 
-const imams = (await getCollection('imams')).sort((a, b) => a.data.order - b.data.order);
-const imam = (id: string) => imams.find((i) => i.id === id);
-const list = khutbahSchedule(new Date(Date.now() - 7 * 86400_000), 40);
-const archive = (await getCollection('resources', (r) => r.data.type === 'khutbah' && !r.data.draft)).sort((a, b) => +b.data.date - +a.data.date);
+const { settings, imams } = Astro.locals;
+const today = todayInTucson(settings.utc_offset);
+const [list, archive] = await Promise.all([getSchedule(settings, imams, addDays(today, -7), 14), getResources({ type: 'khutbah', limit: 6 })]);
 const feed = new URL('/jummah.ics', Astro.site);
 const sunnahs = [
   ['Ghusl', 'Bathe before the prayer.'],
@@ -25,11 +22,11 @@ const sunnahs = [
 <Base title="Jummah" description="Friday khutbah schedule, khateeb rotation and khutbah notes archive at the Islamic Center of Tucson.">
   <section class="wrap page-hero">
     <p class="eyebrow">Jumu'ah</p>
-    <h1>Every Friday, <span class="serif">12:25 PM.</span></h1>
-    <p class="lead">{site.jummah.label}.</p>
+    <h1>Every Friday, <span class="serif">{fmtTime(settings.jummah_time)}.</span></h1>
+    <p class="lead">{jummahLabel(settings)}.{settings.jummah_note && ` ${settings.jummah_note}`}</p>
     <div class="btn-row hero-ctas">
       <a href={feed.href.replace(/^https?:/, 'webcal:')} class="btn btn-primary"><Icon name="calendar-plus" />Subscribe to the schedule</a>
-      <a href={site.mapsUrl} class="btn" target="_blank" rel="noopener"><Icon name="pin" />Directions</a>
+      <a href={settings.maps_url} class="btn" target="_blank" rel="noopener"><Icon name="pin" />Directions</a>
     </div>
     <p class="tiny muted ics-alt">Or <a href="/jummah.ics" download>download the .ics file</a> for Google, Apple or Outlook Calendar.</p>
   </section>
@@ -37,17 +34,17 @@ const sunnahs = [
   <section class="wrap">
     <div class="jm-grid">
       <div class="card next-card" data-upcoming data-limit="1">
-        {list.map((k, i) => { const im = imam(k.khateeb); return (
+        {list.map((k, i) => (
           <div class="next" data-date={k.date} hidden={i !== 1}>
             <span class="chip chip-clay">This Friday</span>
             <p class="next-date">{fmtDate(k.date, { weekday: 'long', month: 'long', day: 'numeric' })}</p>
             <div class="next-who">
-              <div class="avatar arch" aria-hidden="true">{im?.data.name.split(' ').slice(1).map((w) => w[0]).join('')}</div>
-              <div><p class="small muted">Khateeb</p><p class="next-name">{im?.data.name ?? 'To be announced'}</p>{k.topic && <p class="small">“{k.topic}”</p>}</div>
+              {k.imam?.photo_url ? <img class="avatar arch" src={k.imam.photo_url} alt="" /> : <div class="avatar arch" aria-hidden="true">{initials(khateebLabel(k))}</div>}
+              <div><p class="small muted">Khateeb</p><p class="next-name">{k.guestName || k.imam?.name || 'To be announced'}</p>{k.topic && <p class="small">“{k.topic}”</p>}</div>
             </div>
             {k.note && <p class="small note">{k.note}</p>}
           </div>
-        ); })}
+        ))}
       </div>
 
       <div class="card sched">
@@ -56,8 +53,8 @@ const sunnahs = [
           {list.map((k, i) => (
             <li data-date={k.date} hidden={i < 1 || i > 12}>
               <time datetime={k.date}><span>{fmtDate(k.date, { month: 'short' })}</span><strong>{fmtDate(k.date, { day: 'numeric' })}</strong></time>
-              <div class="who"><strong>{imam(k.khateeb)?.data.shortName ?? 'TBA'}</strong>{k.topic && <span class="small muted">{k.topic}</span>}</div>
-              {k.khateeb !== 'burhan-hamdan' && <span class="chip chip-teal">Rotation</span>}
+              <div class="who"><strong>{khateebLabel(k)}</strong>{k.topic && <span class="small muted">{k.topic}</span>}</div>
+              {k.guestName && <span class="chip chip-gold">Guest</span>}
             </li>
           ))}
         </ol>
@@ -72,7 +69,7 @@ const sunnahs = [
       <a href="/library?type=khutbah" class="link-arrow">All khutbahs<Icon name="arrow-right" /></a>
     </div>
     {archive.length ? (
-      <div class="grid grid-3">{archive.slice(0, 6).map((r) => <div class="reveal"><ResourceCard entry={r} khateebName={r.data.khateeb ? imam(r.data.khateeb.id)?.data.shortName : undefined} /></div>)}</div>
+      <div class="grid grid-3">{archive.map((r) => <div class="reveal"><ResourceCard r={r} khateebName={imamName(imams, r.imam_id)} /></div>)}</div>
     ) : <p class="muted">Khutbah notes will appear here soon, insha'Allah.</p>}
   </section>
 
@@ -102,7 +99,7 @@ const sunnahs = [
   .next-date { font-size: clamp(28px, 4vw, 40px); font-weight: 700; letter-spacing: -0.04em; line-height: 1.05; }
   .next-who { display: flex; gap: 16px; align-items: center; padding: 14px; border-radius: 16px; background: var(--bg); }
   .next-name { font-size: 22px; font-weight: 700; letter-spacing: -0.03em; }
-  .avatar { width: 64px; height: 80px; flex: none; display: grid; place-items: center; background: linear-gradient(160deg, var(--teal), var(--clay)); color: #fff; font-weight: 700; font-size: 22px; }
+  .avatar { object-fit: cover; width: 64px; height: 80px; flex: none; display: grid; place-items: center; background: linear-gradient(160deg, var(--teal), var(--clay)); color: #fff; font-weight: 700; font-size: 22px; }
   .note { padding: 10px 12px; border-radius: 10px; background: var(--gold-soft); }
   .sched-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
   .sched-head h2 { font-size: 24px; }

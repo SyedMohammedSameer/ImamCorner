@@ -5,3 +5,7 @@ dist
 .DS_Store
 public/pdfjs
 .claude
+.env
+.env.*
+!.env.example
+test-files

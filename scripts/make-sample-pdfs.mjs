@@ -1,9 +1,9 @@
 // Generates the sample PDFs in public/files so the library has something to show.
 // Replace them with real khutbah notes, books and handouts at any time.
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { writeFile, mkdir } from 'node:fs/promises';
 
-const OUT = new URL('../public/files/', import.meta.url);
+const OUT = new URL('../supabase/sample-files/', import.meta.url);
 const TEAL = rgb(0.06, 0.37, 0.36);
 const CLAY = rgb(0.76, 0.36, 0.2);
 const INK = rgb(0.11, 0.1, 0.09);
@@ -166,26 +166,5 @@ await makeDoc({
     { h: '4. Ihsan: excellence', p: ['To worship Allah as though you see Him; and though you do not see Him, He surely sees you. Ihsan is the highest level and touches every action.'] },
     { h: '5. The Hour and its signs', p: ['The questioner asks about the Hour. The answer teaches humility: the one asked knows no more than the one asking. Some of its signs are then mentioned.'] },
     { h: 'Discussion questions', list: ['Why did Jibreel come in the form of a man?', 'What is the difference between Islam and Iman?', 'Pick one action this week and try to do it with ihsan. What changed?'] },
-  ],
-});
-
-const classes = JSON.parse(await readFile(new URL('../src/data/classes.json', import.meta.url), 'utf8'));
-const names = { 'burhan-hamdan': 'Sh. Burhan Hamdan', 'amir-koshin': 'Sh. Amir Koshin' };
-const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const full = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday' };
-await makeDoc({
-  file: 'weekly-schedule.pdf',
-  kicker: 'Islamic Center of Tucson',
-  title: 'Weekly Classes & Reminders',
-  sections: [
-    { p: ["Jumu'ah khutbah every Friday at 12:25 PM. Office hours with Sh. Burhan Hamdan at the ICT office. Book online at the Imam's Corner website."] },
-    ...days.map((d) => ({
-      h: full[d],
-      table: [
-        ...(d === 'Fri' ? [["12:25 PM", "Jumu'ah khutbah & prayer", '']] : []),
-        ...classes.programs.filter((p) => p.days.includes(d)).map((p) => [p.time.replace('After Isha', 'After Isha').slice(0, 14), `${p.title} (${p.audience})`, names[p.presenter] || '']),
-        ...classes.officeHours.filter((o) => o.day === d).map((o) => ['Office', `Office hours (${o.time})`, 'Sh. Burhan Hamdan']),
-      ],
-    })),
   ],
 });

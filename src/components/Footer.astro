@@ -1,9 +1,10 @@
 ---
 import Logo from './Logo.astro';
 import Icon from './Icon.astro';
-import site from '../data/site.json';
 import { NAV } from '../data/nav';
 const year = new Date().getFullYear();
+const s = Astro.locals.settings;
+const host = s.website_url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
 ---
 <footer class="site-footer">
   <svg class="skyline" viewBox="0 0 1440 120" preserveAspectRatio="none" aria-hidden="true">
@@ -14,7 +15,7 @@ const year = new Date().getFullYear();
       <div class="grid top">
         <div class="about">
           <a href="/" class="brand"><Logo size={36} /><strong>Imam's Corner</strong></a>
-          <p class="muted">{site.tagline}</p>
+          <p class="muted">{s.tagline}</p>
           <p class="arabic dua" lang="ar">رَبَّنَا تَقَبَّلْ مِنَّا إِنَّكَ أَنتَ السَّمِيعُ الْعَلِيمُ</p>
         </div>
         <div>
@@ -28,14 +29,15 @@ const year = new Date().getFullYear();
         <div>
           <h4>Visit</h4>
           <ul class="contact">
-            <li><Icon name="pin" size={16} /><a href={site.mapsUrl} target="_blank" rel="noopener">{site.center}<br />{site.address}</a></li>
-            <li><Icon name="mail" size={16} /><a href={`mailto:${site.email}`}>{site.email}</a></li>
-            <li><Icon name="external" size={16} /><a href={site.centerWebsite} target="_blank" rel="noopener">ictucson.org</a></li>
+            <li><Icon name="pin" size={16} /><a href={s.maps_url} target="_blank" rel="noopener">{s.center_name}<br />{s.address}</a></li>
+            {s.email && <li><Icon name="mail" size={16} /><a href={`mailto:${s.email}`}>{s.email}</a></li>}
+            {s.phone && <li><Icon name="phone" size={16} /><a href={`tel:${s.phone.replace(/[^+\d]/g, '')}`}>{s.phone}</a></li>}
+            {host && <li><Icon name="external" size={16} /><a href={s.website_url} target="_blank" rel="noopener">{host}</a></li>}
           </ul>
         </div>
       </div>
       <div class="bottom">
-        <span>© {year} {site.center}</span>
+        <span>© {year} {s.center_name}</span>
         <span class="muted">Made with care in Tucson, Arizona · <a href="/admin/">Staff</a></span>
       </div>
     </div>

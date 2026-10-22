@@ -1,12 +1,12 @@
 ---
 import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
-import { getCollection } from 'astro:content';
-import classes from '../data/classes.json';
-import site from '../data/site.json';
+import { getPrograms, imamName } from '../lib/data';
 
-const imams = await getCollection('imams');
-const name = (id: string) => imams.find((i) => i.id === id)?.data.shortName ?? id;
+const { settings, imams } = Astro.locals;
+const { programs, officeHours } = await getPrograms();
+const name = (id: string | null) => imamName(imams, id);
+const host = imams[0];
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const FULL: Record<string, string> = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday' };
 const KIND: Record<string, { label: string; chip: string; icon: string }> = {
@@ -15,8 +15,7 @@ const KIND: Record<string, { label: string; chip: string; icon: string }> = {
   youth: { label: 'Youth', chip: 'chip-gold', icon: 'sparkles' },
   quran: { label: 'Qur’an circle', chip: 'chip-green', icon: 'book' },
 };
-const order = (t: string) => (/^\d/.test(t) ? parseInt(t) + (t.includes('PM') ? 12 : 0) : t.startsWith('Asr') ? 15.5 : t.startsWith('Maghrib') ? 18 : 20);
-const byDay = Object.fromEntries(DAYS.map((d) => [d, classes.programs.filter((p) => p.days.includes(d)).sort((a, b) => order(a.time) - order(b.time))]));
+const byDay = Object.fromEntries(DAYS.map((d) => [d, programs.filter((p) => p.days.includes(d))]));
 ---
 <Base title="Classes & reminders" description="Weekly classes, daily reminders, youth programs and Qur'an memorization circles at the Islamic Center of Tucson.">
   <section class="wrap page-hero">
@@ -49,7 +48,7 @@ const byDay = Object.fromEntries(DAYS.map((d) => [d, classes.programs.filter((p)
             )}
             {byDay[d].map((p) => (
               <article class="card prog">
-                <div class="prog-time"><strong>{p.time}</strong></div>
+                <div class="prog-time"><strong>{p.time_label}</strong></div>
                 <div class="prog-body">
                   <span class={`chip ${KIND[p.kind].chip}`}><Icon name={KIND[p.kind].icon} size={14} />{KIND[p.kind].label}</span>
                   <h3>{p.title}</h3>
@@ -59,10 +58,10 @@ const byDay = Object.fromEntries(DAYS.map((d) => [d, classes.programs.filter((p)
                 </div>
               </article>
             ))}
-            {classes.officeHours.filter((o) => o.day === d).map((o) => (
+            {officeHours.filter((o) => o.day === d && o.time_label).map((o) => (
               <a href="/office-hours" class="card prog office">
-                <div class="prog-time"><strong>{o.time}</strong></div>
-                <div class="prog-body"><span class="chip"><Icon name="calendar" size={14} />Office hours</span><h3>Meet Sh. Burhan Hamdan</h3><p class="small muted">{classes.officeLocation} · Book a time →</p></div>
+                <div class="prog-time"><strong>{o.time_label}</strong></div>
+                <div class="prog-body"><span class="chip"><Icon name="calendar" size={14} />Office hours</span><h3>Meet {host?.short_name ?? 'the Imam'}</h3><p class="small muted">{settings.office_location} · Book a time →</p></div>
               </a>
             ))}
             {byDay[d].length === 0 && d !== 'Fri' && <p class="muted">No scheduled programs.</p>}

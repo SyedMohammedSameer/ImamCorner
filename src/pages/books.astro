@@ -1,14 +1,14 @@
 ---
 import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
-import { getCollection } from 'astro:content';
+import { getBooks, BOOK_CATEGORIES } from '../lib/data';
 
-const books = (await getCollection('books')).sort((a, b) => a.data.order - b.data.order);
-const CATS = ['Start here', 'Qur’an & Tafsir', 'Prophetic biography', 'Hadith', 'Belief', 'Spirituality', 'Family & youth'] as const;
-const groups = CATS.map((c) => ({ c, items: books.filter((b) => b.data.category === c) })).filter((g) => g.items.length);
+const books = await getBooks();
+const cats = [...BOOK_CATEGORIES, ...new Set(books.map((b) => b.category).filter((c) => !BOOK_CATEGORIES.includes(c)))];
+const groups = cats.map((c) => ({ c, items: books.filter((b) => b.category === c) })).filter((g) => g.items.length);
 const PALETTE = [['#0e6b66', '#2aa79b'], ['#a8461f', '#e07a4c'], ['#3e6b4b', '#6f9a78'], ['#8a6420', '#d6ad55'], ['#5a3f6b', '#9b78ad'], ['#1d3a5f', '#4e7bb0']];
-const path = ['saheeh-international', 'fortress-of-the-muslim', 'sealed-nectar', 'forty-hadith'].map((id) => books.find((b) => b.id === id)).filter(Boolean);
-const find = (b: any) => b.data.link ?? `https://www.google.com/search?tbm=bks&q=${encodeURIComponent(`${b.data.title} ${b.data.author}`)}`;
+const path = books.filter((b) => b.starter);
+const find = (b: (typeof books)[number]) => b.link || `https://www.google.com/search?tbm=bks&q=${encodeURIComponent(`${b.title} ${b.author}`)}`;
 ---
 <Base title="Recommended books" description="A reading list from the Imams of the Islamic Center of Tucson.">
   <section class="wrap page-hero">
@@ -17,36 +17,36 @@ const find = (b: any) => b.data.link ?? `https://www.google.com/search?tbm=bks&q
     <p class="lead">Trusted translations and classical works, from first steps to deeper study.</p>
   </section>
 
-  <section class="wrap">
+  {path.length > 0 && <section class="wrap">
     <div class="path card reveal">
       <div class="path-head">
         <span class="icon-tile gold"><Icon name="sparkles" /></span>
         <div><h2>New here? Start with these four.</h2><p class="small muted">For new Muslims and anyone returning to their deen.</p></div>
       </div>
       <ol class="path-list">
-        {path.map((b: any, i) => <li><span class="step">{i + 1}</span><div><strong>{b.data.title}</strong><span class="small muted">{b.data.author}</span></div></li>)}
+        {path.map((b, i) => <li><span class="step">{i + 1}</span><div><strong>{b.title}</strong><span class="small muted">{b.author}</span></div></li>)}
       </ol>
     </div>
-  </section>
+  </section>}
 
   {groups.map((g) => (
     <section class="wrap shelf">
       <h2 class="shelf-h reveal">{g.c}</h2>
       <div class="grid grid-3">
-        {g.items.map((b) => { const [c1, c2] = PALETTE[b.data.order % PALETTE.length]; return (
+        {g.items.map((b) => { const [c1, c2] = PALETTE[b.sort % PALETTE.length]; return (
           <article class="card book reveal">
             <div class="book-cover" style={`--c1:${c1};--c2:${c2}`} aria-hidden="true">
               <span class="bc-spine"></span>
-              <span class="bc-title">{b.data.title.split(' (')[0]}</span>
-              <span class="bc-author">{b.data.author}</span>
+              <span class="bc-title">{b.title.split(' (')[0]}</span>
+              <span class="bc-author">{b.author}</span>
             </div>
             <div class="book-body">
-              <span class={`chip ${b.data.level === 'Beginner' ? 'chip-green' : b.data.level === 'Intermediate' ? 'chip-gold' : 'chip-clay'}`}>{b.data.level}</span>
-              <h3>{b.data.title}</h3>
-              <p class="small muted">{b.data.author}</p>
-              <p class="small why">{b.data.why}</p>
+              <span class={`chip ${b.level === 'Beginner' ? 'chip-green' : b.level === 'Intermediate' ? 'chip-gold' : 'chip-clay'}`}>{b.level}</span>
+              <h3>{b.title}</h3>
+              <p class="small muted">{b.author}</p>
+              <p class="small why">{b.why}</p>
               <div class="book-links">
-                {b.data.resource ? <a href={`/library/${b.data.resource.id}`} class="btn btn-accent btn-sm"><Icon name="book" />Read now</a> : <a href={find(b)} class="btn btn-sm" target="_blank" rel="noopener"><Icon name="search" />Find this book</a>}
+                {b.resourceSlug ? <a href={`/library/${b.resourceSlug}`} class="btn btn-accent btn-sm"><Icon name="book" />Read now</a> : <a href={find(b)} class="btn btn-sm" target="_blank" rel="noopener"><Icon name="search" />Find this book</a>}
               </div>
             </div>
           </article>

@@ -1,15 +1,11 @@
+# Pages render on Netlify Functions (Astro adapter) and read from Supabase.
+# Set PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY and SUPABASE_SECRET_KEY in the Netlify UI.
 [build]
   command = "npm run build"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "22"
-
-[[headers]]
-  for = "/files/*"
-  [headers.values]
-    Cache-Control = "public, max-age=86400"
-    Access-Control-Allow-Origin = "*"
 
 [[headers]]
   for = "/_astro/*"

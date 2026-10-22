@@ -1,28 +1,29 @@
 ---
 import Icon from './Icon.astro';
-interface Props { entry: any; khateebName?: string }
-const { entry, khateebName } = Astro.props;
-const d = entry.data;
+import type { Resource } from '../lib/data';
+interface Props { r: Resource; khateebName?: string }
+const { r, khateebName } = Astro.props;
 const TYPES: Record<string, { label: string; tone: string; icon: string }> = {
   khutbah: { label: 'Khutbah', tone: 'teal', icon: 'mic' },
   book: { label: 'Book', tone: 'clay', icon: 'book' },
   notes: { label: 'Notes', tone: 'gold', icon: 'page' },
   guide: { label: 'Guide', tone: 'green', icon: 'lightbulb' },
 };
-const t = TYPES[d.type];
-const date = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(d.date);
+const t = TYPES[r.type];
+const date = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${r.date}T12:00:00Z`));
+const by = khateebName || r.author;
 ---
-<a href={`/library/${entry.id}`} class="card res-card" data-type={d.type} data-search={`${d.title} ${d.summary} ${d.tags.join(' ')} ${d.author ?? ''} ${khateebName ?? ''}`.toLowerCase()}>
+<a href={`/library/${r.slug}`} class="card res-card" data-type={r.type} data-search={`${r.title} ${r.summary} ${r.tags.join(' ')} ${by}`.toLowerCase()}>
   <div class={`cover tone-${t.tone}`} aria-hidden="true">
     <span class="cover-icon"><Icon name={t.icon} size={22} /></span>
-    <span class="cover-title">{d.title}</span>
+    <span class="cover-title">{r.title}</span>
     <span class="cover-lines"><i></i><i></i><i></i></span>
   </div>
   <div class="res-body">
     <div class="res-meta"><span class={`chip chip-${t.tone}`}>{t.label}</span><span class="tiny muted">{date}</span></div>
-    <h3>{d.title}</h3>
-    {d.summary && <p class="small muted clamp">{d.summary}</p>}
-    <span class="res-foot small">{khateebName ?? d.author}<span class="link-arrow">Read<Icon name="arrow-right" /></span></span>
+    <h3>{r.title}</h3>
+    {r.summary && <p class="small muted clamp">{r.summary}</p>}
+    <span class="res-foot small">{by}<span class="link-arrow">Read<Icon name="arrow-right" /></span></span>
   </div>
 </a>
 

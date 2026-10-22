@@ -48,7 +48,7 @@ const steps = [
         <p class="lead">The Imam will reach out personally. No pressure.</p>
       </div>
       <div>
-        <form name="new-muslim" method="POST" action="/thanks" data-netlify="true" netlify-honeypot="bot-field" class="card form">
+        <form name="new-muslim" method="POST" action="/api/submit" data-form class="card form">
           <input type="hidden" name="form-name" value="new-muslim" />
           <p hidden><label>Don't fill this out: <input name="bot-field" /></label></p>
           <div class="form-grid">

@@ -1,51 +1,52 @@
 ---
 import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
-import { getCollection, render } from 'astro:content';
-import classes from '../data/classes.json';
-import site from '../data/site.json';
+import { getPrograms, bioBlocks, initials } from '../lib/data';
 
-const imams = (await getCollection('imams')).sort((a, b) => a.data.order - b.data.order);
-const rendered = await Promise.all(imams.map(async (i) => ({ entry: i, Content: (await render(i)).Content })));
+const { imams } = Astro.locals;
+const { programs } = await getPrograms();
 const DAYN: Record<string, string> = { Mon: 'Mon', Tue: 'Tue', Wed: 'Wed', Thu: 'Thu', Fri: 'Fri', Sat: 'Sat', Sun: 'Sun' };
 ---
-<Base title="Our Imams" description="Meet Sheikh Burhan Hamdan and Sheikh Amir Koshin of the Islamic Center of Tucson.">
+<Base title="Our Imams" description={`Meet ${imams.map((i) => i.name).join(' and ')} of the Islamic Center of Tucson.`}>
   <section class="wrap page-hero">
     <p class="eyebrow">Our Imams</p>
     <h1>Scholars, teachers, <span class="serif">neighbours.</span></h1>
     <p class="lead">The Imams of the Islamic Center of Tucson lead the prayers, give the khutbah and teach through the week.</p>
   </section>
 
-  {rendered.map(({ entry: im, Content }, idx) => {
-    const teaches = classes.programs.filter((p) => p.presenter === im.id);
-    const initials = im.data.name.split(' ').slice(1).map((w) => w[0]).join('');
+  {imams.map((im, idx) => {
+    const teaches = programs.filter((p) => p.presenter === im.id);
     return (
-      <section class="wrap imam-sec" id={im.id}>
+      <section class="wrap imam-sec" id={im.slug}>
         <div class:list={['imam-grid', { flip: idx % 2 }]}>
           <div class="portrait-col reveal">
             <div class="portrait arch">
-              {im.data.photo ? <img src={im.data.photo} alt={im.data.name} loading="lazy" /> : (
+              {im.photo_url ? <img src={im.photo_url} alt={im.name} loading="lazy" /> : (
                 <div class="portrait-art" aria-hidden="true">
                   <svg viewBox="0 0 200 260" preserveAspectRatio="xMidYMid slice"><defs><pattern id={`p-${im.id}`} width="40" height="40" patternUnits="userSpaceOnUse"><path d="M20 2 25.5 14.5 38 20 25.5 25.5 20 38 14.5 25.5 2 20 14.5 14.5Z" fill="none" stroke="#fff" stroke-opacity=".22" /></pattern></defs><rect width="200" height="260" fill={`url(#p-${im.id})`} /></svg>
-                  <span>{initials}</span>
+                  <span>{initials(im.name)}</span>
                 </div>
               )}
             </div>
           </div>
           <div class="bio reveal">
-            <p class="eyebrow">{im.data.role}</p>
-            <h2>{im.data.name}</h2>
-            <div class="prose"><Content /></div>
-            {im.data.focus.length > 0 && <div class="chips">{im.data.focus.map((f) => <span class="chip">{f}</span>)}</div>}
+            <p class="eyebrow">{im.role}</p>
+            <h2>{im.name}</h2>
+            {im.bio && (
+              <div class="prose bio-text">
+                {bioBlocks(im.bio).map((b) => b.t === 'h' ? <h3>{b.text}</h3> : b.t === 'ul' ? <ul>{b.items.map((i) => <li>{i}</li>)}</ul> : <p>{b.text}</p>)}
+              </div>
+            )}
+            {im.focus.length > 0 && <div class="chips">{im.focus.map((f) => <span class="chip">{f}</span>)}</div>}
             {teaches.length > 0 && (
               <div class="teaches card card-tint">
                 <h3>Teaches</h3>
-                <ul>{teaches.map((p) => <li><span>{p.title}</span><span class="small muted">{p.days.map((d) => DAYN[d]).join(' · ')} · {p.time}</span></li>)}</ul>
+                <ul>{teaches.map((p) => <li><span>{p.title}</span><span class="small muted">{p.days.map((d) => DAYN[d]).join(' · ')} · {p.time_label}</span></li>)}</ul>
               </div>
             )}
             <div class="btn-row">
-              {im.data.email && <a href={`mailto:${im.data.email}`} class="btn"><Icon name="mail" />Email</a>}
-              {im.id === 'burhan-hamdan' && <a href="/office-hours" class="btn btn-primary"><Icon name="calendar" />Book office hours</a>}
+              {im.email && <a href={`mailto:${im.email}`} class="btn"><Icon name="mail" />Email</a>}
+              {idx === 0 && <a href="/office-hours" class="btn btn-primary"><Icon name="calendar" />Book office hours</a>}
               <a href="/ask" class="btn btn-ghost"><Icon name="message" />Ask a question</a>
             </div>
           </div>
@@ -73,4 +74,7 @@ const DAYN: Record<string, string> = { Mon: 'Mon', Tue: 'Tue', Wed: 'Wed', Thu: 
   .teaches li { display: grid; gap: 2px; padding: 10px 0; border-top: 1px solid var(--line); font-weight: 600; }
   .teaches li:first-child { border-top: 0; }
   .btn-row { margin-top: 24px; }
+  .bio-text h3 { font-size: 17px; letter-spacing: -0.015em; margin-top: 1.4em; }
+  .bio-text ul { margin: 0.4em 0 0; padding-left: 1.2em; display: grid; gap: 4px; font-size: 16.5px; }
+  .bio-text li::marker { color: var(--teal); }
 </style>

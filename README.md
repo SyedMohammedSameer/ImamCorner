@@ -1,28 +1,66 @@
 # Imam's Corner, Islamic Center of Tucson
 
-A rebuild of the ICT Imam's Corner (previously on Google Sites) as a fast, mobile-first static site with a built-in PDF reader, a staff editor and offline support. Built with [Astro](https://astro.build) and deployed on Netlify.
+The website for the Imam's office: khutbahs, classes, a PDF library with a built-in reader, prayer times, and an admin dashboard so the Imam can update everything from a phone.
 
-## What's inside
+- **Site:** Astro, server-rendered on Netlify. Pages are cached at the edge for a minute, and admin saves refresh the cache, so changes show almost immediately.
+- **Data:** Supabase (Postgres, file storage and admin logins).
+- **Admin:** `/admin`, a dashboard that works on a phone.
 
-| Page | What it does |
+## The admin dashboard
+
+| Screen | What the Imam can do |
 | --- | --- |
-| `/` | Live prayer times, Hijri date, this Friday's khateeb, today's programs, ayah of the day, upcoming Islamic dates |
-| `/jummah` | Next khutbah, 12-week rotation, khutbah archive, subscribable calendar feed (`/jummah.ics`) |
-| `/classes` | Weekly timetable by day (or full week), with today highlighted, plus office hours |
-| `/library` | Searchable library of khutbah notes, books, handouts and guides |
-| `/library/<doc>` | **Built-in PDF reader**: search inside the PDF, pinch/button zoom, fit to page, night mode, focus mode, share a link to a page, download, save offline, remembers your last page |
-| `/books` | Recommended reading by category, with a four-book starter path |
-| `/imams` | Bios, focus areas and what each imam teaches |
-| `/prayer-times` | Today's times, a printable monthly table, and a qibla compass that uses the phone's sensors |
-| `/office-hours` | Weekly hours and a link to Google appointment booking |
-| `/ask` | Ask the Imam form (anonymous allowed) |
-| `/services` | Nikah, janazah, counseling, visits, shahadah and outreach, with a request form |
-| `/new-muslims` | Shahadah, first steps and a contact form |
-| `/admin` | Staff editor (Decap CMS) |
+| Home | Quick actions, this Friday's khateeb, new messages, recent uploads, storage used |
+| Library | Upload PDFs (compressed first), edit details, hide/show, replace the file, delete |
+| Jummah | Change the khateeb or topic for any Friday, add a guest speaker, set the rotation and times |
+| Classes | Add/edit classes and daily reminders, and office hours |
+| Messages | Questions from Ask the Imam and service requests; reply by email or phone, mark done |
+| Books | Recommended reading; attach a PDF or upload one directly for a book |
+| Announcements | Banner on the home page with start and end dates |
+| Imams | Bios, roles, photos, order |
+| Settings | Masjid details, booking link, prayer calculation, ayah of the day, and the admin team (invite/remove) |
 
-The site can also be installed as an app: add it to the home screen (PWA), and saved PDFs open without internet.
+Signed-in admins also see an **Edit** button on public pages that opens the matching admin screen.
 
-## Run locally
+### PDF compression
+
+Uploads are compressed in the browser before they're sent:
+
+- The uploader checks whether a PDF is **scanned** (photographed pages) or **digital** (real text).
+- **Scanned PDFs** are re-rendered at a sensible resolution. *Clean document* also removes shadows, yellow tint and uneven lighting from phone photos, turning pages into crisp black text on white. A 14 MB, 5-page phone capture comes down to about 1 MB.
+- **Digital PDFs** are kept as they are by default, so their text stays searchable.
+- **Photos to PDF:** pick photos of pages on a phone; they can be reordered, rotated and removed before being combined.
+- You see the before and after sizes and a preview of the first page before uploading. The limit is 50 MB per file.
+
+## Setup
+
+### 1. Supabase
+
+1. Create a free project at [supabase.com](https://supabase.com).
+2. Copy `.env.example` to `.env` and fill it in from the project dashboard.
+3. In **Authentication → URL Configuration**, set **Site URL** to the live site (e.g. `https://imamcorner.netlify.app`). Under **Redirect URLs**, add `https://imamcorner.netlify.app/admin/welcome` and `http://localhost:4321/admin/welcome`.
+4. Create the tables, load the starting content, and invite yourself as the first admin:
+
+```bash
+npm run db:setup -- --admin you@example.com
+```
+
+The invite email links to `/admin/welcome`, where you choose a password. Invite others from **Settings → Admin team**.
+
+### 2. Netlify
+
+In **Project configuration → Environment variables**, add:
+
+| Variable | Value |
+| --- | --- |
+| `PUBLIC_SUPABASE_URL` | Project URL |
+| `PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable key |
+| `SUPABASE_SECRET_KEY` | Secret key (keep private) |
+| `SITE_URL` | `https://imamcorner.netlify.app` (or your domain) |
+
+Then redeploy. The build settings come from `netlify.toml`.
+
+### 3. Run locally
 
 ```bash
 npm install
@@ -32,59 +70,17 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:4321.
+Open http://localhost:4321, and http://localhost:4321/admin for the dashboard.
 
-## Deploy to Netlify
+## Limits on the free plans
 
-1. Push this folder to a GitHub repository.
-2. In Netlify, choose **Add new site → Import an existing project** and pick the repo. The build settings come from `netlify.toml` (`npm run build` → `dist`).
-3. **Forms:** go to Site configuration → Forms and enable form detection. Submissions from *Ask the Imam*, *Service request* and *New Muslim* appear there. Add an email notification to `bhamdan@ictucson.org` under Forms → Form notifications.
-4. **Custom domain (optional):** for example `imam.ictucson.org`. Set the `SITE_URL` environment variable to it so links and the calendar feed use the right address.
+- **Supabase:** 1 GB of file storage, 500 MB database, and 50 MB per file. The dashboard home shows storage used. Free projects pause after a week with no visits; any page visit wakes them.
+- **Supabase emails:** the built-in email sender is rate-limited (a few per hour). That's fine for occasional invites; for more, add custom SMTP under Authentication → Emails.
 
-Old Google Sites paths (`/welcome-page`, `/jummah-khutbah-schedule`, …) redirect to the new pages.
+## Project layout
 
-## Editing content (no code needed)
-
-### Staff editor at `/admin`
-
-1. In Netlify: **Project configuration → Identity → Enable Identity**. Set registration to *Invite only*, then turn on **Git Gateway** under Identity → Services.
-2. Invite the Imam and staff by email. They accept the invite, set a password, and land in the editor.
-3. In the editor they can:
-   - **Library (PDFs):** upload a PDF, choose the type (khutbah / book / notes / guide), pick the khateeb, and publish.
-   - **Jummah schedule:** change the rotation, or override a single Friday with a different khateeb or a topic.
-   - **Classes & office hours**, **Recommended books**, **Imams** (bios and photos), **Announcements** (with an optional expiry date), **Daily reminders**.
-
-Netlify rebuilds the site about a minute after each save.
-
-> If Netlify Identity isn't available on the account, switch the `backend` in `public/admin/config.yml` to the commented-out `github` option. Editors then log in with GitHub accounts that have access to the repo.
-
-> Keep PDFs under ~20 MB for upload through the editor. Larger books can be added to `public/files/` with git directly.
-
-### Editing files directly
-
-- `src/data/site.json`: contact details, address, booking link, Jummah time, prayer calculation settings
-- `src/data/schedule.json`: khutbah rotation and per-Friday overrides
-- `src/data/classes.json`: weekly programs and office hours
-- `src/content/resources/*.md`: library entries (each points at a PDF in `public/files/`)
-- `src/content/books/*.md`, `src/content/imams/*.md`, `src/content/announcements/*.md`
-
-### Keeping dates current
-
-Pages are static and rebuild whenever content changes. Date-based parts (next khutbah, today's classes, prayer times) are recalculated in the visitor's browser, so they stay correct between rebuilds. To refresh the `.ics` calendar feed weekly, create a **Build hook** in Netlify and call it on a schedule (for example, a free cron service hitting the hook every Friday).
-
-## Before launch: please review
-
-- **Bios:** the old site had only titles. The current bios are short drafts based on the timetable. Replace them with real biographies and photos.
-- **Khutbah rotation:** inferred from the old 2023–24 schedule (Sh. Amir Koshin every 4th Friday from 15 Dec 2023). Confirm it, or add overrides.
-- **Office hours on Fri and Sun:** the old timetable said "10:00 pm to 10:00 pm" for those days, which looks like a typo. They're shown as *By appointment* until confirmed.
-- **Address:** `901 E 1st St, Tucson, AZ 85719`. Confirm it, and add a phone number for urgent janazah calls in `site.json` and the Services page.
-- **Prayer times:** calculated with ISNA angles (15°/15°) and standard Asr. Adjust them in `site.json` to match the masjid's timetable, and add iqama times if wanted.
-- **Sample PDFs:** the four PDFs in `public/files/` are placeholders made by `npm run samples`. Delete them, and their entries in `src/content/resources/`, once real documents are uploaded.
-- **Book list:** a starter selection. The Imam should curate it.
-
-## Tech notes
-
-- Astro 7 (static output), pdf.js 6 (`PDFViewer` + find controller), Decap CMS 3.16, plain CSS with light and dark themes.
-- Prayer times, Hijri dates (Umm al-Qura via `Intl`) and qibla are all calculated on-device. No API keys or third-party calls, apart from Google Fonts.
-- `scripts/copy-pdfjs.mjs` copies pdf.js fonts, cmaps and wasm decoders to `public/pdfjs/` before each build.
-- `public/sw.js`: network-first pages, cache-first assets, offline library.
+- `src/pages/`: public pages and `/api` endpoints (form submissions, cache refresh, admin invites)
+- `src/admin/`: the dashboard (Preact), including `compress.ts`, the PDF compressor
+- `src/lib/data.ts`: server-side reads; `src/lib/schedule.ts`: shared Jummah rotation logic
+- `supabase/migrations/`: database schema and security rules; `supabase/seed.sql`: starting content
+- `scripts/setup-db.mjs`: one-time project setup

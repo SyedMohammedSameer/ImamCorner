@@ -299,3 +299,11 @@ a.card:hover, .card-hover:hover { transform: translateY(-3px); box-shadow: var(-
 .divider-star { display: flex; align-items: center; gap: 14px; color: var(--gold); }
 .divider-star::before, .divider-star::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--line-strong), transparent); }
 .divider-star svg { width: 18px; height: 18px; }
+
+/* Floating shortcut for signed-in admins (see lib/shell.ts) */
+.admin-edit {
+  position: fixed; z-index: 90; right: 16px; bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + 14px);
+  display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 16px; border-radius: 999px;
+  background: var(--ink); color: var(--bg); font-size: 14px; font-weight: 600; box-shadow: var(--shadow-l);
+}
+@media (min-width: 900px) { .admin-edit { bottom: 24px; } }

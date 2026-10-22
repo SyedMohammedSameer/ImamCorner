@@ -3,20 +3,29 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Imam's Corner \u2014 Islamic Center of Tucson",
+  "description": "Imam's Corner, Islamic Center of Tucson",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
     "samples": "node scripts/make-sample-pdfs.mjs",
     "predev": "node scripts/copy-pdfjs.mjs",
-    "prebuild": "node scripts/copy-pdfjs.mjs"
+    "prebuild": "node scripts/copy-pdfjs.mjs",
+    "db:setup": "node --env-file=.env scripts/setup-db.mjs"
   },
   "dependencies": {
+    "@astrojs/netlify": "^8.2.10",
+    "@astrojs/preact": "^6.1.1",
+    "@netlify/functions": "^6.0.3",
+    "@supabase/supabase-js": "^2.118.0",
     "astro": "^7.4.0",
-    "pdfjs-dist": "^6.4.299"
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.4.299",
+    "preact": "^11.0.1"
   },
   "devDependencies": {
-    "pdf-lib": "^1.17.1"
+    "@astrojs/check": "^0.9.12",
+    "postgres": "^3.4.9",
+    "typescript": "^6.0.3"
   }
 }

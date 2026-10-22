@@ -1,9 +1,14 @@
 import { defineConfig } from 'astro/config';
+import netlify from '@astrojs/netlify';
+import preact from '@astrojs/preact';
 
-// Set SITE_URL in Netlify (Site settings → Environment variables) once a domain is chosen.
+// Pages render on request from Supabase and are cached at Netlify's edge (see src/middleware.ts),
+// so changes made in the admin dashboard go live without a rebuild.
 export default defineConfig({
-  site: process.env.SITE_URL || process.env.URL || 'https://imams-corner.netlify.app',
-  output: 'static',
+  site: process.env.SITE_URL || process.env.URL || 'https://imamcorner.netlify.app',
+  output: 'server',
+  adapter: netlify(),
+  integrations: [preact()],
   trailingSlash: 'ignore',
   build: { format: 'file' },
   vite: {

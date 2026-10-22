@@ -1,0 +1,64 @@
+---
+import Base from '../../layouts/Base.astro';
+import PdfViewer from '../../components/PdfViewer.astro';
+import ResourceCard from '../../components/ResourceCard.astro';
+import Icon from '../../components/Icon.astro';
+import { getResource, getResources, fileUrl, imamName, fmtDate } from '../../lib/data';
+
+const { imams } = Astro.locals;
+const d = await getResource(Astro.params.slug!);
+if (!d) return Astro.rewrite('/404');
+const khateeb = imams.find((i) => i.id === d.imam_id);
+const all = await getResources({ excludeId: d.id, limit: 30 });
+const related = all.filter((r) => r.type === d.type || r.tags.some((t) => d.tags.includes(t))).slice(0, 3);
+const TYPE: Record<string, string> = { khutbah: 'Khutbah', book: 'Book', notes: 'Class notes', guide: 'Guide' };
+const date = fmtDate(d.date, { month: 'long', day: 'numeric', year: 'numeric' });
+const size = !d.file_size ? '' : d.file_size < 1048576 ? `${Math.max(1, Math.round(d.file_size / 1024))} KB` : `${(d.file_size / 1048576).toFixed(d.file_size > 10485760 ? 0 : 1)} MB`;
+---
+<Base title={d.title} description={d.summary || `${TYPE[d.type]} from Imam's Corner`}>
+  <section class="wrap doc-head">
+    <a href={`/library?type=${d.type}`} class="back"><Icon name="arrow-left" size={16} />Library</a>
+    <div class="doc-title">
+      <div>
+        <p class="eyebrow">{TYPE[d.type]} · {date}</p>
+        <h1>{d.title}</h1>
+        <p class="byline muted">{khateeb ? <a href={`/imams#${khateeb.slug}`}>{khateeb.name}</a> : d.author}{(d.pages || size) && <span> · {[d.pages && `${d.pages} pages`, size].filter(Boolean).join(' · ')}</span>}</p>
+      </div>
+    </div>
+    {d.summary && <p class="lead">{d.summary}</p>}
+    {d.tags.length > 0 && <div class="tags">{d.tags.map((t) => <span class="chip">{t}</span>)}</div>}
+  </section>
+
+  <section class="wrap reader-wrap">
+    <PdfViewer src={fileUrl(d.file_path)} title={d.title} />
+    {d.audio_url && (
+      <div class="card audio">
+        <span class="icon-tile clay"><Icon name="play" /></span>
+        <div><strong>Listen to the khutbah</strong><audio controls preload="none" src={d.audio_url}></audio></div>
+      </div>
+    )}
+  </section>
+
+  {related.length > 0 && (
+    <section class="wrap section-tight">
+      <h2 class="rel-h">Keep reading</h2>
+      <div class="grid grid-3">{related.map((r) => <ResourceCard r={r} khateebName={imamName(imams, r.imam_id)} />)}</div>
+    </section>
+  )}
+</Base>
+
+<style>
+  .doc-head { padding-top: clamp(20px, 4vw, 48px); padding-bottom: 22px; }
+  .back { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--muted); margin-bottom: 18px; }
+  .back:hover { color: var(--teal); }
+  .doc-head h1 { font-size: clamp(32px, 5vw, 56px); margin-top: 10px; max-width: 20ch; }
+  .byline { margin-top: 10px; font-weight: 500; }
+  .byline a { color: var(--teal); }
+  .doc-head .lead { margin-top: 14px; max-width: 720px; font-size: 18px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+  .audio { display: flex; gap: 14px; align-items: center; margin-top: 16px; }
+  .audio > div { flex: 1; display: grid; gap: 8px; }
+  .audio audio { width: 100%; }
+  .rel-h { font-size: 28px; margin-bottom: 20px; }
+  @media (max-width: 899px) { .reader-wrap { padding-inline: 10px; } }
+</style>

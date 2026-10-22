@@ -2,25 +2,25 @@
 import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
 import FormDone from '../components/FormDone.astro';
-import site from '../data/site.json';
 const topics = ['Aqeedah (belief)', 'Salah & worship', 'Fasting & Ramadan', 'Zakah & finances', 'Marriage & family', 'Parenting & youth', 'Qur’an & tafsir', 'Book recommendation', 'Becoming Muslim', 'Something else'];
 const faqs = [
   ['Is my question private?', 'Yes. Only the Imam’s office sees it. Leave your name and email blank to ask anonymously.'],
   ['How will I get an answer?', 'By email, if you leave one.'],
   ['Something urgent?', 'For a death in the family or other urgent matters, contact the masjid directly.'],
 ];
+const { settings, imams } = Astro.locals;
 ---
 <Base title="Ask the Imam" description="Send a private question to the Imam of the Islamic Center of Tucson.">
   <section class="wrap page-hero">
     <p class="eyebrow">Ask the Imam</p>
     <h1>No question <span class="serif">is too small.</span></h1>
-    <p class="lead">Write to Sheikh Burhan Hamdan. Leave your name blank to ask anonymously.</p>
+    <p class="lead">Write to {imams[0]?.name ?? 'the Imam'}. Leave your name blank to ask anonymously.</p>
   </section>
 
   <section class="wrap">
     <div class="ask-grid">
       <div>
-        <form name="ask-the-imam" method="POST" action="/thanks" data-netlify="true" netlify-honeypot="bot-field" class="card form">
+        <form name="ask-the-imam" method="POST" action="/api/submit" data-form class="card form">
           <input type="hidden" name="form-name" value="ask-the-imam" />
           <p hidden><label>Don't fill this out: <input name="bot-field" /></label></p>
           <div class="form-grid">
@@ -54,7 +54,7 @@ const faqs = [
           </details>
         ))}
         <div class="card card-tint alt">
-          <p class="small"><strong>Prefer to talk?</strong> Book time in <a href="/office-hours">office hours</a> or email <a href={`mailto:${site.email}`}>{site.email}</a>.</p>
+          <p class="small"><strong>Prefer to talk?</strong> Book time in <a href="/office-hours">office hours</a> or email <a href={`mailto:${settings.email}`}>{settings.email}</a>.</p>
         </div>
       </aside>
     </div>

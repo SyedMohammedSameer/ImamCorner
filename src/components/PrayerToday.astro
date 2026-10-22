@@ -1,10 +1,12 @@
 ---
 import Icon from './Icon.astro';
 import { PRAYERS } from '../lib/prayer';
+import { prayerConfig } from '../lib/data';
 interface Props { variant?: 'card' | 'full' }
 const { variant = 'card' } = Astro.props;
+const cfg = JSON.stringify(prayerConfig(Astro.locals.settings));
 ---
-<section class:list={['prayer-today', variant]} data-prayer-today aria-label="Today's prayer times in Tucson">
+<section class:list={['prayer-today', variant]} data-prayer-today data-cfg={cfg} aria-label="Today's prayer times in Tucson">
   <div class="pt-head">
     <div>
       <p class="pt-kicker"><Icon name="pin" size={14} /> Tucson, AZ · <span data-greg>Today</span></p>
@@ -28,12 +30,11 @@ const { variant = 'card' } = Astro.props;
 </section>
 
 <script>
-  import site from '../data/site.json';
   import { prayerTimes, localDate, formatTime, nextPrayer, countdown, PRAYERS } from '../lib/prayer';
   import { hijriLabel } from '../lib/islamic';
 
-  const { lat, lng, utcOffset, timezone } = site.location;
-  const cfg = { lat, lng, utcOffset, fajrAngle: site.prayer.fajrAngle, ishaAngle: site.prayer.ishaAngle, asrFactor: site.prayer.asrFactor };
+  const cfg = JSON.parse(document.querySelector<HTMLElement>('[data-prayer-today]')!.dataset.cfg!);
+  const { utcOffset, timezone } = cfg;
 
   function tick() {
     const now = new Date();

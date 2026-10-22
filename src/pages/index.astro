@@ -2,30 +2,16 @@
 import Base from '../layouts/Base.astro';
 import HeroArt from '../components/HeroArt.astro';
 import PrayerToday from '../components/PrayerToday.astro';
-import ResourceCard from '../components/ResourceCard.astro';
 import Icon from '../components/Icon.astro';
-import { getCollection } from 'astro:content';
-import site from '../data/site.json';
-import classes from '../data/classes.json';
-import reminders from '../data/reminders.json';
-import { khutbahSchedule, fmtDate } from '../lib/jummah';
+import { getPrograms, getAnnouncements, getAyat, getSchedule, imamName as nameOf, todayInTucson, addDays, fmtDate, jummahLabel, khateebLabel, initials } from '../lib/data';
 
-const imams = (await getCollection('imams')).sort((a, b) => a.data.order - b.data.order);
-const imamName = (id: string) => imams.find((i) => i.id === id)?.data.shortName ?? id;
-const resources = (await getCollection('resources', (r) => !r.data.draft)).sort((a, b) => +b.data.date - +a.data.date);
-const latest = resources.slice(0, 3);
-const now = new Date();
-const announcements = (await getCollection('announcements')).filter((a) => !a.data.expires || a.data.expires > now).sort((a, b) => +b.data.date - +a.data.date);
-const fridays = khutbahSchedule(new Date(now.getTime() - 7 * 86400_000), 10);
+const { settings, imams } = Astro.locals;
+const imamName = (id: string | null) => nameOf(imams, id);
+const today = todayInTucson(settings.utc_offset);
+const [{ programs }, announcements, ayat, fridays] = await Promise.all([
+  getPrograms(), getAnnouncements(today), getAyat(), getSchedule(settings, imams, addDays(today, -7), 10),
+]);
 
-const services = [
-  { href: '/ask', icon: 'message', tone: '', title: 'Ask the Imam', text: 'Send a question, anonymously if you like.' },
-  { href: '/office-hours', icon: 'calendar', tone: 'gold', title: 'Office hours', text: 'Book a private meeting with Sh. Burhan.' },
-  { href: '/services#nikah', icon: 'rings', tone: 'clay', title: 'Nikah', text: 'Pre-marital meetings and officiating.' },
-  { href: '/services#janazah', icon: 'leaf', tone: 'green', title: 'Janazah', text: 'Funeral guidance and support for the family.' },
-  { href: '/services#counseling', icon: 'heart', tone: 'clay', title: 'Counseling', text: 'Confidential, faith-centered support.' },
-  { href: '/new-muslims', icon: 'sparkles', tone: 'gold', title: 'New to Islam', text: 'Shahadah and first steps.' },
-];
 const kindTone: Record<string, string> = { reminder: 'chip-teal', class: 'chip-clay', youth: 'chip-gold', quran: 'chip-green' };
 const kindLabel: Record<string, string> = { reminder: 'Reminder', class: 'Class', youth: 'Youth', quran: 'Qur’an' };
 ---
@@ -56,11 +42,11 @@ const kindLabel: Record<string, string> = { reminder: 'Reminder', class: 'Class'
         {fridays.map((f, i) => (
           <div class="friday-body" data-date={f.date} hidden={i !== 1}>
             <p class="small muted">This Friday · {fmtDate(f.date, { weekday: 'long', month: 'long', day: 'numeric' })}</p>
-            <p class="fri-name">{imamName(f.khateeb)}</p>
+            <p class="fri-name">{khateebLabel(f)}</p>
             {f.topic && <p class="small">“{f.topic}”</p>}
           </div>
         ))}
-        <p class="fri-time"><Icon name="clock" size={16} />{site.jummah.label}</p>
+        <p class="fri-time"><Icon name="clock" size={16} />{jummahLabel(settings)}</p>
         <a href="/jummah" class="link-arrow">Full schedule<Icon name="arrow-right" /></a>
       </div>
     </div>
@@ -71,8 +57,8 @@ const kindLabel: Record<string, string> = { reminder: 'Reminder', class: 'Class'
       {announcements.map((a) => (
         <div class="announcement reveal">
           <span class="icon-tile gold"><Icon name="bell" /></span>
-          <div><strong>{a.data.title}</strong><p class="small muted">{a.body?.trim()}</p></div>
-          {a.data.link && <a href={a.data.link} class="btn btn-sm">{a.data.linkLabel ?? 'Learn more'}</a>}
+          <div><strong>{a.title}</strong>{a.body && <p class="small muted">{a.body}</p>}</div>
+          {a.link && <a href={a.link} class="btn btn-sm">{a.link_label || 'Learn more'}</a>}
         </div>
       ))}
     </section>
@@ -90,9 +76,9 @@ const kindLabel: Record<string, string> = { reminder: 'Reminder', class: 'Class'
         <a href="/classes" class="link-arrow">Weekly timetable<Icon name="arrow-right" /></a>
       </div>
       <div class="grid grid-3 tonight" data-today-list>
-        {classes.programs.map((p) => (
+        {programs.map((p) => (
           <article class="card program reveal" data-days={p.days.join(' ')}>
-            <div class="program-top"><span class={`chip ${kindTone[p.kind]}`}>{kindLabel[p.kind]}</span><span class="small muted program-time"><Icon name="clock" size={14} />{p.time}</span></div>
+            <div class="program-top"><span class={`chip ${kindTone[p.kind]}`}>{kindLabel[p.kind]}</span><span class="small muted program-time"><Icon name="clock" size={14} />{p.time_label}</span></div>
             <h3>{p.title}</h3>
             {p.arabic && <p class="arabic program-ar" lang="ar">{p.arabic}</p>}
             <p class="small muted">{imamName(p.presenter)} · {p.audience}</p>
@@ -109,7 +95,7 @@ const kindLabel: Record<string, string> = { reminder: 'Reminder', class: 'Class'
   <!-- AYAH -->
   <section class="wrap">
     <figure class="ayah pattern reveal" data-ayah>
-      {reminders.ayat.map((a, i) => (
+      {ayat.map((a, i) => (
         <div class="ayah-item" data-i={i} hidden={i !== 0}>
           <p class="arabic ayah-ar" lang="ar">{a.ar}</p>
           <blockquote>“{a.en}”</blockquote>
@@ -118,45 +104,6 @@ const kindLabel: Record<string, string> = { reminder: 'Reminder', class: 'Class'
       ))}
       <span class="ayah-label"><Icon name="star8" size={14} /> Reminder of the day</span>
     </figure>
-  </section>
-
-  <!-- LIBRARY -->
-  <section class="section">
-    <div class="wrap">
-      <div class="section-head reveal">
-        <div>
-          <p class="eyebrow">Library</p>
-          <h2>Read the khutbah again. <span class="serif">Anywhere.</span></h2>
-          <p class="lead">Khutbah notes, books and handouts in a built-in reader.</p>
-        </div>
-        <a href="/library" class="link-arrow">Open the library<Icon name="arrow-right" /></a>
-      </div>
-      <div class="grid grid-3">
-        {latest.map((r) => <div class="reveal"><ResourceCard entry={r} khateebName={r.data.khateeb ? imamName(r.data.khateeb.id) : undefined} /></div>)}
-      </div>
-    </div>
-  </section>
-
-  <!-- SERVICES -->
-  <section class="section services-band">
-    <div class="wrap">
-      <div class="section-head reveal">
-        <div>
-          <p class="eyebrow">The Imam's office</p>
-          <h2>Here for the moments that matter.</h2>
-        </div>
-      </div>
-      <div class="grid grid-3">
-        {services.map((s) => (
-          <a href={s.href} class="card svc reveal">
-            <span class={`icon-tile ${s.tone}`}><Icon name={s.icon} /></span>
-            <h3>{s.title}</h3>
-            <p class="small muted">{s.text}</p>
-            <span class="svc-arrow"><Icon name="arrow-right" /></span>
-          </a>
-        ))}
-      </div>
-    </div>
   </section>
 
   <!-- IMAMS -->
@@ -168,12 +115,12 @@ const kindLabel: Record<string, string> = { reminder: 'Reminder', class: 'Class'
       </div>
       <div class="grid grid-2">
         {imams.map((im) => (
-          <a href={`/imams#${im.id}`} class="card imam reveal">
-            <div class="avatar arch" aria-hidden="true"><span>{im.data.name.split(' ').slice(1).map((w) => w[0]).join('')}</span></div>
+          <a href={`/imams#${im.slug}`} class="card imam reveal">
+            <div class="avatar arch" aria-hidden="true"><span>{initials(im.name)}</span></div>
             <div>
-              <p class="small muted">{im.data.role}</p>
-              <h3>{im.data.name}</h3>
-              <div class="chips">{im.data.focus.slice(0, 3).map((f) => <span class="chip">{f}</span>)}</div>
+              <p class="small muted">{im.role}</p>
+              <h3>{im.name}</h3>
+              <div class="chips">{im.focus.slice(0, 3).map((f) => <span class="chip">{f}</span>)}</div>
             </div>
           </a>
         ))}
@@ -229,12 +176,6 @@ const kindLabel: Record<string, string> = { reminder: 'Reminder', class: 'Class'
   .ayah blockquote { margin: 14px auto 0; max-width: 680px; font-family: var(--font-serif); font-size: clamp(22px, 3vw, 32px); line-height: 1.25; letter-spacing: -0.01em; }
   .ayah figcaption { margin-top: 16px; font-size: 14px; color: var(--muted); font-weight: 600; }
   .ayah-label { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); display: inline-flex; gap: 6px; align-items: center; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gold); white-space: nowrap; }
-
-  .services-band { background: linear-gradient(180deg, transparent, var(--bg-2) 18%, var(--bg-2) 82%, transparent); }
-  .svc { display: flex; flex-direction: column; gap: 10px; }
-  .svc h3 { margin-top: 6px; }
-  .svc-arrow { position: absolute; top: 24px; right: 24px; color: var(--muted); transition: transform 0.3s var(--ease), color 0.3s; }
-  .svc:hover .svc-arrow { transform: translateX(4px); color: var(--teal); }
 
   .imam { display: flex; gap: 20px; align-items: center; }
   .avatar { flex: none; width: 92px; height: 116px; display: grid; place-items: center; background: linear-gradient(160deg, var(--teal), #1f8f86 50%, var(--clay)); color: #fff; font-size: 30px; font-weight: 700; letter-spacing: -0.04em; }
